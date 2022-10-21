@@ -1,12 +1,11 @@
 // Copyright (c) 2016-2020 The ZCash developers
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
 #include "sapling/sapling_validation.h"
 
 #include "consensus/consensus.h" // for MAX_BLOCK_SIZE_CURRENT
-#include "validation.h" // for MAX_ZEROCOIN_TX_SIZE
 #include "script/interpreter.h" // for SigHash
 #include "consensus/validation.h" // for CValidationState
 #include "util.h" // for error()

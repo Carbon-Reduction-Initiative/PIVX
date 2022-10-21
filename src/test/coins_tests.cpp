@@ -1,5 +1,5 @@
 // Copyright (c) 2014 The Bitcoin Core developers
-// Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2019 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,7 +20,7 @@
 #include <boost/test/unit_test.hpp>
 
 int ApplyTxInUndo(Coin&& undo, CCoinsViewCache& view, const COutPoint& out);
-void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txundo, int nHeight);
+void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txundo, int nHeight, bool fSkipInvalid = false);
 
 namespace
 {
@@ -172,7 +172,7 @@ public:
 class TxWithNullifiers
 {
 public:
-    CTransaction tx;
+    CTransactionRef tx;
     uint256 saplingNullifier;
 
     TxWithNullifiers()
@@ -183,7 +183,7 @@ public:
         SpendDescription sd;
         sd.nullifier = saplingNullifier;
         mutableTx.sapData->vShieldedSpend.push_back(sd);
-        tx = CTransaction(mutableTx);
+        tx = MakeTransactionRef(CTransaction(mutableTx));
     }
 };
 
@@ -235,12 +235,12 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
     TxWithNullifiers txWithNullifiers;
 
     // Insert a nullifier into the base.
-    cache1.SetNullifiers(txWithNullifiers.tx, true);
+    cache1.SetNullifiers(*txWithNullifiers.tx, true);
     checkNullifierCache(cache1, txWithNullifiers, true);
     cache1.Flush(); // Flush to base.
 
     // Remove the nullifier from cache
-    cache1.SetNullifiers(txWithNullifiers.tx, false);
+    cache1.SetNullifiers(*txWithNullifiers.tx, false);
 
     // The nullifier now should be `false`.
     checkNullifierCache(cache1, txWithNullifiers, false);
@@ -254,12 +254,12 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         TxWithNullifiers txWithNullifiers;
 
         // Insert a nullifier into the base.
-        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(*txWithNullifiers.tx, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifiers(txWithNullifiers.tx, false);
+        cache1.SetNullifiers(*txWithNullifiers.tx, false);
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
 
         // Insert a nullifier into the base.
         TxWithNullifiers txWithNullifiers;
-        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(*txWithNullifiers.tx, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Empties cache.
 
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
             // Remove the nullifier.
             CCoinsViewCache cache2(&cache1);
             checkNullifierCache(cache2, txWithNullifiers, true);
-            cache1.SetNullifiers(txWithNullifiers.tx, false);
+            cache1.SetNullifiers(*txWithNullifiers.tx, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
@@ -297,14 +297,14 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
 
         // Insert a nullifier into the base.
         TxWithNullifiers txWithNullifiers;
-        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(*txWithNullifiers.tx, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCache cache2(&cache1);
-            cache2.SetNullifiers(txWithNullifiers.tx, false);
+            cache2.SetNullifiers(*txWithNullifiers.tx, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
@@ -485,14 +485,14 @@ BOOST_AUTO_TEST_CASE(nullifiers_test)
 
     TxWithNullifiers txWithNullifiers;
     checkNullifierCache(cache, txWithNullifiers, false);
-    cache.SetNullifiers(txWithNullifiers.tx, true);
+    cache.SetNullifiers(*txWithNullifiers.tx, true);
     checkNullifierCache(cache, txWithNullifiers, true);
     cache.Flush();
 
     CCoinsViewCache cache2(&base);
 
     checkNullifierCache(cache2, txWithNullifiers, true);
-    cache2.SetNullifiers(txWithNullifiers.tx, false);
+    cache2.SetNullifiers(*txWithNullifiers.tx, false);
     checkNullifierCache(cache2, txWithNullifiers, false);
     cache2.Flush();
 
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
 
             // 2/20 times create a new coinbase
             if (randiter % 20 < 2 || coinbase_coins.size() < 10) {
-                // PIVX: don't test for duplicate coinbases as those are not possible due to
+                // CARI: don't test for duplicate coinbases as those are not possible due to
                 // BIP34 enforced since the beginning.
                 assert(CTransaction(tx).IsCoinBase());
                 coinbase_coins.insert(COutPoint(tx.GetHash(), 0));
@@ -818,7 +818,7 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
                     auto utxod = FindRandomFrom(coinbase_coins);
                     tx = std::get<0>(utxod->second);
                     prevout = tx.vin[0].prevout;
-                    // PIVX: no duplicates
+                    // CARI: no duplicates
                     BOOST_CHECK(!utxoset.count(prevout));
                     disconnected_coins.erase(utxod->first);
                     continue;
@@ -953,7 +953,7 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
     BOOST_CHECK_EQUAL(cc2.out.nValue, 110397);
     BOOST_CHECK_EQUAL(HexStr(cc2.out.scriptPubKey), HexStr(GetScriptForDestination(CKeyID(uint160(ParseHex("8c988f1a4a4de2161e0f50aac7f17e7f9555caa4"))))));
 
-    // PIVX: Example with fCoinStake
+    // CARI: Example with fCoinStake
     CDataStream ss2b(ParseHex("97b401808b63008c988f1a4a4de2161e0f50aac7f17e7f9555caa4"), SER_DISK, CLIENT_VERSION);
     Coin cc2b;
     ss2b >> cc2b;
@@ -1219,7 +1219,7 @@ BOOST_AUTO_TEST_CASE(ccoins_add)
      * entry in the cache after the modification. Verify behavior with the
      * with the ModifyNewCoin coinbase argument set to false, and to true.
      *
-     * PIVX: Remove Coinbase argument (ref: https://github.com/PIVX-Project/PIVX/pull/1775)
+     * CARI: Remove Coinbase argument (ref: https://github.com/CARI-Project/CARI/pull/1775)
      *
      *           Cache   Write   Result  Cache        Result
      *           Value   Value   Value   Flags        Flags

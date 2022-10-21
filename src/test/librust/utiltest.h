@@ -1,5 +1,5 @@
 // Copyright (c) 2016-2020 The Zcash developers
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -35,6 +35,7 @@ void RegtestDeactivateSapling();
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore, bool genNewKey = false);
+CKey AddTestCKeyToWallet(CWallet& wallet, bool genNewKey = false);
 
 /**
  * Generates a dummy destination script
@@ -60,7 +61,7 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
  * Single dummy input, one or many shielded outputs.
  */
 CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
-                                 CBasicKeyStore& keyStoreFrom,
+                                 CWallet& keyStoreFrom,
                                  CAmount inputAmount,
                                  std::vector<ShieldedDestination> vDest,
                                  bool genNewKey = false,
@@ -70,10 +71,10 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
  * Single dummy input, single shielded output to sk default address.
  */
 CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
-                                 CBasicKeyStore& keyStore,
+                                 CWallet& keyStore,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value,
                                  bool genNewKey = false,
                                  const CWallet* pwalletIn = nullptr);
 
-#endif // PIVX_UTIL_TEST_H
+#endif // CARI_UTIL_TEST_H
