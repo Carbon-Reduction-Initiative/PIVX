@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2018-2019 The PIVX developers
+// Copyright (c) 2018-2019 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -107,17 +107,13 @@ void PaymentServerTests::paymentServerTests()
     r.paymentRequest.getMerchant(caStore, merchant);
     QCOMPARE(merchant, QString(""));
 
-    unsigned long lDoSProtectionTrigger = (unsigned long) BIP70_MAX_PAYMENTREQUEST_SIZE + 1;
-    std::string randData(lDoSProtectionTrigger, '\0');
+    // Test BIP70 DoS protection:
+    auto randdata = FastRandomContext().randbytes(BIP70_MAX_PAYMENTREQUEST_SIZE + 1);
 
-    unsigned char* buff = reinterpret_cast<unsigned char *>(&randData[0]);
-
-    // Just get some random data big enough to trigger BIP70 DoS protection
-    GetRandBytes(buff, sizeof(buff));
     // Write data to a temp file:
     QTemporaryFile tempFile;
     tempFile.open();
-    tempFile.write((const char*)buff, sizeof(buff));
+    tempFile.write((const char*)randdata.data(), randdata.size());
     tempFile.close();
     // Trigger BIP70 DoS protection
     QCOMPARE(PaymentServer::readPaymentRequestFromFile(tempFile.fileName(), r.paymentRequest), false);
@@ -125,7 +121,7 @@ void PaymentServerTests::paymentServerTests()
     delete server;
 }
 
-void RecipientCatcher::getRecipient(SendCoinsRecipient r)
+void RecipientCatcher::getRecipient(const SendCoinsRecipient& r)
 {
     recipient = r;
 }

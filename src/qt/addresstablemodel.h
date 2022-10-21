@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
-// Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2017-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -106,11 +106,11 @@ public:
     EditStatus getEditStatus() const { return editStatus; }
 
 private:
-    WalletModel* walletModel;
-    CWallet* wallet;
-    AddressTablePriv* priv;
-    QStringList columns;
-    EditStatus editStatus;
+    WalletModel* walletModel{nullptr};
+    CWallet* wallet{nullptr};
+    AddressTablePriv* priv{nullptr};
+    QStringList columns{};
+    EditStatus editStatus{OK};
 
     /** Notify listeners that data changed. */
     void emitDataChanged(int index);

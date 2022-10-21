@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,7 +14,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "clientversion.h"
-#include "masternode-sync.h"
+#include "interfaces/handler.h"
 #include "masternodeman.h"
 #include "net.h"
 #include "netbase.h"
@@ -133,6 +133,26 @@ QString ClientModel::getLastBlockHash() const
 {
     const uint256& nHash = (cacheTip == nullptr ? Params().GenesisBlock().GetHash() : cacheTip->GetBlockHash());
     return QString::fromStdString(nHash.GetHex());
+}
+
+uint256 ClientModel::getLastBlockProcessed() const
+{
+    return cacheTip == nullptr ? Params().GenesisBlock().GetHash() : cacheTip->GetBlockHash();
+}
+
+int ClientModel::getLastBlockProcessedHeight() const
+{
+    return cacheTip == nullptr ? 0 : cacheTip->nHeight;
+}
+
+int64_t ClientModel::getLastBlockProcessedTime() const
+{
+    return cacheTip == nullptr ? Params().GenesisBlock().GetBlockTime() : cacheTip->GetBlockTime();
+}
+
+bool ClientModel::isTipCached() const
+{
+    return cacheTip;
 }
 
 double ClientModel::getVerificationProgress() const
@@ -310,21 +330,21 @@ static void BannedListChanged(ClientModel *clientmodel)
 void ClientModel::subscribeToCoreSignals()
 {
     // Connect signals to client
-    uiInterface.ShowProgress.connect(boost::bind(ShowProgress, this, _1, _2));
-    uiInterface.NotifyNumConnectionsChanged.connect(boost::bind(NotifyNumConnectionsChanged, this, _1));
-    uiInterface.NotifyAlertChanged.connect(boost::bind(NotifyAlertChanged, this));
-    uiInterface.BannedListChanged.connect(boost::bind(BannedListChanged, this));
-    uiInterface.NotifyBlockTip.connect(boost::bind(BlockTipChanged, this, _1, _2));
+    m_handler_show_progress = interfaces::MakeHandler(uiInterface.ShowProgress.connect(std::bind(ShowProgress, this, std::placeholders::_1, std::placeholders::_2)));
+    m_handler_notify_num_connections_changed = interfaces::MakeHandler(uiInterface.NotifyNumConnectionsChanged.connect(std::bind(NotifyNumConnectionsChanged, this, std::placeholders::_1)));
+    m_handler_notify_alert_changed = interfaces::MakeHandler(uiInterface.NotifyAlertChanged.connect(std::bind(NotifyAlertChanged, this)));
+    m_handler_banned_list_changed = interfaces::MakeHandler(uiInterface.BannedListChanged.connect(std::bind(BannedListChanged, this)));
+    m_handler_notify_block_tip = interfaces::MakeHandler(uiInterface.NotifyBlockTip.connect(std::bind(BlockTipChanged, this, std::placeholders::_1, std::placeholders::_2)));
 }
 
 void ClientModel::unsubscribeFromCoreSignals()
 {
     // Disconnect signals from client
-    uiInterface.ShowProgress.disconnect(boost::bind(ShowProgress, this, _1, _2));
-    uiInterface.NotifyNumConnectionsChanged.disconnect(boost::bind(NotifyNumConnectionsChanged, this, _1));
-    uiInterface.NotifyAlertChanged.disconnect(boost::bind(NotifyAlertChanged, this));
-    uiInterface.BannedListChanged.disconnect(boost::bind(BannedListChanged, this));
-    uiInterface.NotifyBlockTip.disconnect(boost::bind(BlockTipChanged, this, _1, _2));
+    m_handler_show_progress->disconnect();
+    m_handler_notify_num_connections_changed->disconnect();
+    m_handler_notify_alert_changed->disconnect();
+    m_handler_banned_list_changed->disconnect();
+    m_handler_notify_block_tip->disconnect();
 }
 
 bool ClientModel::getTorInfo(std::string& ip_port) const

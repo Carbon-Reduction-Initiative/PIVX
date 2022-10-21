@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
-// Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2019 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,6 +10,12 @@
 
 #include <QAbstractTableModel>
 #include <QStringList>
+
+#include <memory>
+
+namespace interfaces {
+    class Handler;
+}
 
 class TransactionRecord;
 class TransactionTablePriv;
@@ -54,8 +60,6 @@ public:
         LabelRole,
         /** Net amount of transaction */
         AmountRole,
-        /** Unique identifier */
-        TxIDRole,
         /** Transaction hash */
         TxHashRole,
         /** Is transaction confirmed? */
@@ -83,11 +87,15 @@ Q_SIGNALS:
     void txArrived(const QString& hash, const bool& isCoinStake, const bool& isCSAnyType);
 
 private:
-    CWallet* wallet;
-    WalletModel* walletModel;
-    QStringList columns;
-    TransactionTablePriv* priv;
-    bool fProcessingQueuedTransactions;
+    // Listeners
+    std::unique_ptr<interfaces::Handler> m_handler_transaction_changed;
+    std::unique_ptr<interfaces::Handler> m_handler_show_progress;
+
+    CWallet* wallet{nullptr};
+    WalletModel* walletModel{nullptr};
+    QStringList columns{};
+    TransactionTablePriv* priv{nullptr};
+    bool fProcessingQueuedTransactions{false};
 
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();

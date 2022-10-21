@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2017 The Bitcoin Core developers
-// Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2017-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef PIVX_POLICY_FEERATE_H
-#define PIVX_POLICY_FEERATE_H
+#ifndef CARI_POLICY_FEERATE_H
+#define CARI_POLICY_FEERATE_H
 
 #include "amount.h"
 #include "serialize.h"
@@ -24,7 +24,6 @@ public:
     CFeeRate() : nSatoshisPerK(0) {}
     explicit CFeeRate(const CAmount& _nSatoshisPerK) : nSatoshisPerK(_nSatoshisPerK) {}
     CFeeRate(const CAmount& nFeePaid, size_t nSize);
-    CFeeRate(const CFeeRate& other) { nSatoshisPerK = other.nSatoshisPerK; }
 
     CAmount GetFee(size_t size) const;                  // unit returned is satoshis
     CAmount GetFeePerK() const { return GetFee(1000); } // satoshis-per-1000-bytes
@@ -46,4 +45,4 @@ public:
     }
 };
 
-#endif //  PIVX_POLICY_FEERATE_H
+#endif //  CARI_POLICY_FEERATE_H

@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -65,6 +65,8 @@ private:
     // critical section to protect the inner data structures specifically on messaging
     mutable RecursiveMutex cs_process_message;
 
+    // map to hold all MNs (indexed by collateral outpoint)
+    std::map<COutPoint, MasternodeRef> mapMasternodes;
     // who's asked for the Masternode list and the last time
     std::map<CNetAddr, int64_t> mAskedUsForMasternodeList;
     // who we asked for the Masternode list and the last time
@@ -84,9 +86,6 @@ private:
     int ProcessMessageInner(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
 
 public:
-    // map to hold all MNs (indexed by collateral outpoint)
-    std::map<COutPoint, MasternodeRef> mapMasternodes;
-
     // Keep track of all broadcasts I've seen
     std::map<uint256, CMasternodeBroadcast> mapSeenMasternodeBroadcast;
     // Keep track of all pings I've seen
@@ -145,7 +144,7 @@ public:
     void CheckSpentCollaterals(const std::vector<CTransactionRef>& vtx);
 
     /// Find an entry in the masternode list that is next to be paid
-    const CMasternode* GetNextMasternodeInQueueForPayment(int nBlockHeight, bool fFilterSigTime, int& nCount) const;
+    const CMasternode* GetNextMasternodeInQueueForPayment(int nBlockHeight, bool fFilterSigTime, int& nCount, const CBlockIndex* pChainTip = nullptr) const;
 
     /// Get the current winner for this block
     const CMasternode* GetCurrentMasterNode(int mod = 1, int64_t nBlockHeight = 0, int minProtocol = 0) const;
@@ -170,7 +169,7 @@ public:
     void Remove(const COutPoint& collateralOut);
 
     /// Update masternode list and maps using provided CMasternodeBroadcast
-    void UpdateMasternodeList(CMasternodeBroadcast mnb);
+    void UpdateMasternodeList(CMasternodeBroadcast& mnb);
 
     /// Get the time a masternode was last paid
     int64_t GetLastPaid(const MasternodeRef& mn, const CBlockIndex* BlockReading) const;

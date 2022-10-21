@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2019 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,7 +7,13 @@
 
 #include <QWidget>
 
+#include <memory>
+
 class NetworkStyle;
+
+namespace interfaces {
+    class Handler;
+};
 
 namespace Ui {
 class Splash;
@@ -33,6 +39,11 @@ protected:
 
 private:
     Ui::Splash *ui;
+
+    // Listeners
+    std::unique_ptr<interfaces::Handler> m_handler_init_message;
+    std::unique_ptr<interfaces::Handler> m_handler_show_progress;
+    std::unique_ptr<interfaces::Handler> m_handler_load_wallet;
 
     /** Connect core signals to splash screen */
     void subscribeToCoreSignals();

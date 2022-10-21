@@ -1,7 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,7 +20,6 @@
 #include "wallet/wallet.h"
 #endif // ENABLE_WALLET
 
-#include <boost/bind.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/thread.hpp>
 
@@ -43,7 +42,6 @@ static struct CRPCSignals
     boost::signals2::signal<void ()> Started;
     boost::signals2::signal<void ()> Stopped;
     boost::signals2::signal<void (const CRPCCommand&)> PreCommand;
-    boost::signals2::signal<void (const CRPCCommand&)> PostCommand;
 } g_rpcSignals;
 
 void RPCServer::OnStarted(std::function<void ()> slot)
@@ -58,12 +56,7 @@ void RPCServer::OnStopped(std::function<void ()> slot)
 
 void RPCServer::OnPreCommand(std::function<void (const CRPCCommand&)> slot)
 {
-    g_rpcSignals.PreCommand.connect(boost::bind(slot, _1));
-}
-
-void RPCServer::OnPostCommand(std::function<void (const CRPCCommand&)> slot)
-{
-    g_rpcSignals.PostCommand.connect(boost::bind(slot, _1));
+    g_rpcSignals.PreCommand.connect(std::bind(slot, std::placeholders::_1));
 }
 
 void RPCTypeCheck(const UniValue& params,
@@ -86,18 +79,18 @@ void RPCTypeCheck(const UniValue& params,
 }
 
 void RPCTypeCheckObj(const UniValue& o,
-                  const std::map<std::string, UniValue::VType>& typesExpected,
-                  bool fAllowNull,
-                  bool fStrict)
+    const std::map<std::string, UniValueType>& typesExpected,
+    bool fAllowNull,
+    bool fStrict)
 {
-    for (const std::pair<std::string, UniValue::VType>& t : typesExpected) {
+    for (const auto& t : typesExpected) {
         const UniValue& v = find_value(o, t.first);
         if (!fAllowNull && v.isNull())
             throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Missing %s", t.first));
 
-        if (!((v.type() == t.second) || (fAllowNull && (v.isNull())))) {
+        if (!(t.second.typeAny || v.type() == t.second.type || (fAllowNull && v.isNull()))) {
             std::string err = strprintf("Expected type %s for %s, got %s",
-                                   uvTypeName(t.second), t.first, uvTypeName(v.type()));
+                                        uvTypeName(t.second.type), t.first, uvTypeName(v.type()));
             throw JSONRPCError(RPC_TYPE_ERROR, err);
         }
     }
@@ -447,18 +440,12 @@ UniValue CRPCTable::execute(const JSONRPCRequest &request) const
     } catch (const std::exception& e) {
         throw JSONRPCError(RPC_MISC_ERROR, e.what());
     }
-
-    g_rpcSignals.PostCommand(*pcmd);
 }
 
 std::vector<std::string> CRPCTable::listCommands() const
 {
     std::vector<std::string> commandList;
-    typedef std::map<std::string, const CRPCCommand*> commandMap;
-
-    std::transform( mapCommands.begin(), mapCommands.end(),
-                   std::back_inserter(commandList),
-                   boost::bind(&commandMap::value_type::first,_1) );
+    for (const auto& i : mapCommands) commandList.emplace_back(i.first);
     return commandList;
 }
 
@@ -471,7 +458,7 @@ std::string HelpExampleRpc(std::string methodname, std::string args)
 {
     return "> curl --user myusername --data-binary '{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", "
            "\"method\": \"" +
-           methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:31814/\n";
+           methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:51473/\n";
 }
 
 void RPCSetTimerInterfaceIfUnset(RPCTimerInterface *iface)

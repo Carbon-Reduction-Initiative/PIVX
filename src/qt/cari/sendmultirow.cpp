@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -149,6 +149,10 @@ bool SendMultiRow::addressChanged(const QString& str, bool fOnlyValidate)
         updateStyle(ui->lineEditAddress);
         return valid;
     }
+
+    setCssProperty(ui->lineEditAddress, "edit-primary-multi-book");
+    updateStyle(ui->lineEditAddress);
+
     return false;
 }
 

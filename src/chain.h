@@ -3,7 +3,7 @@
 // Copyright (c) 2011-2013 The PPCoin developers
 // Copyright (c) 2013-2014 The NovaCoin Developers
 // Copyright (c) 2014-2018 The BlackCoin Developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -225,7 +225,7 @@ public:
 
     //! (memory only) Total value held by the Sapling circuit up to and including this block.
     //! Will be nullopt if nChainTx is zero.
-    Optional<CAmount> nChainSaplingValue{nullopt};
+   Optional<CAmount> nChainSaplingValue{nullopt};
 
     //! block header
     int nVersion{0};
@@ -284,11 +284,14 @@ public:
     const CBlockIndex* GetAncestor(int height) const;
 };
 
+/** Find the forking point between two chain tips. */
+const CBlockIndex* LastCommonAncestor(const CBlockIndex* pa, const CBlockIndex* pb);
+
 /** Used to marshal pointers into hashes for db storage. */
 
-// New serialization introduced with 1.0.1
-static const int DBI_OLD_SER_VERSION = 1000000;
-static const int DBI_SER_VERSION_NO_ZC = 1000100;   // removes mapZerocoinSupply, nMoneySupply
+// New serialization introduced with 4.0.99
+static const int DBI_OLD_SER_VERSION = 4009900;
+static const int DBI_SER_VERSION_NO_ZC = 4009902;   // removes mapZerocoinSupply, nMoneySupply
 
 class CDiskBlockIndex : public CBlockIndex
 {
@@ -325,7 +328,7 @@ public:
             READWRITE(VARINT(nUndoPos));
 
         if (nSerVersion >= DBI_SER_VERSION_NO_ZC) {
-            // Serialization with CLIENT_VERSION = 1000100+
+            // Serialization with CLIENT_VERSION = 4009902+
             READWRITE(nFlags);
             READWRITE(this->nVersion);
             READWRITE(vStakeModifier);
@@ -344,7 +347,7 @@ public:
             }
 
         } else if (nSerVersion > DBI_OLD_SER_VERSION && ser_action.ForRead()) {
-            // Serialization with CLIENT_VERSION = 1000000
+            // Serialization with CLIENT_VERSION = 4009901
             std::map<libzerocoin::CoinDenomination, int64_t> mapZerocoinSupply;
             int64_t nMoneySupply = 0;
             READWRITE(nMoneySupply);
@@ -362,7 +365,7 @@ public:
             }
 
         } else if (ser_action.ForRead()) {
-            // Serialization with CLIENT_VERSION < 1000000
+            // Serialization with CLIENT_VERSION = 4009900-
             int64_t nMint = 0;
             uint256 hashNext{};
             int64_t nMoneySupply = 0;
@@ -475,7 +478,7 @@ public:
             READWRITE(VARINT(nUndoPos));
 
         if (nSerVersion > DBI_OLD_SER_VERSION) {
-            // Serialization with CLIENT_VERSION = 1000100+
+            // Serialization with CLIENT_VERSION = 4009901
             READWRITE(nMoneySupply);
             READWRITE(nFlags);
             READWRITE(this->nVersion);
@@ -491,7 +494,7 @@ public:
             }
 
         } else {
-            // Serialization with CLIENT_VERSION <= 1000000
+            // Serialization with CLIENT_VERSION = 4009900-
             READWRITE(nMint);
             READWRITE(nMoneySupply);
             READWRITE(nFlags);

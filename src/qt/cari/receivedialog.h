@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2019 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,9 +27,9 @@ public:
 private Q_SLOTS:
     void onCopy();
 private:
-    Ui::ReceiveDialog *ui;
-    QPixmap *qrImage;
-    SendCoinsRecipient *info = nullptr;
+    Ui::ReceiveDialog *ui{nullptr};
+    QPixmap *qrImage{nullptr};
+    SendCoinsRecipient *info{nullptr};
 };
 
 #endif // RECEIVEDIALOG_H

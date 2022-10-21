@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -406,7 +406,7 @@ void CMasternodeMan::DsegUpdate(CNode* pnode)
 {
     LOCK(cs);
 
-    if (Params().NetworkID() == CBaseChainParams::MAIN) {
+    if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
         if (!(pnode->addr.IsRFC1918() || pnode->addr.IsLocal())) {
             std::map<CNetAddr, int64_t>::iterator it = mWeAskedForMasternodeList.find(pnode->addr);
             if (it != mWeAskedForMasternodeList.end()) {
@@ -465,10 +465,11 @@ void CMasternodeMan::CheckSpentCollaterals(const std::vector<CTransactionRef>& v
 //
 // Deterministically select the oldest/best masternode to pay on the network
 //
-const CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight, bool fFilterSigTime, int& nCount) const
+const CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight, bool fFilterSigTime, int& nCount, const CBlockIndex* pChainTip) const
 {
     AssertLockNotHeld(cs_main);
-    const CBlockIndex* BlockReading = GetChainTip();
+    const CBlockIndex* BlockReading = (pChainTip == nullptr ? GetChainTip() : pChainTip);
+    if (!BlockReading) return nullptr;
     LOCK(cs);
 
     const CMasternode* pBestMasternode = nullptr;
@@ -501,7 +502,7 @@ const CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlock
     nCount = (int)vecMasternodeLastPaid.size();
 
     //when the network is in the process of upgrading, don't penalize nodes that recently restarted
-    if (fFilterSigTime && nCount < nMnCount / 3) return GetNextMasternodeInQueueForPayment(nBlockHeight, false, nCount);
+    if (fFilterSigTime && nCount < nMnCount / 3) return GetNextMasternodeInQueueForPayment(nBlockHeight, false, nCount, BlockReading);
 
     // Sort them high to low
     sort(vecMasternodeLastPaid.rbegin(), vecMasternodeLastPaid.rend(), CompareLastPaid());
@@ -674,7 +675,7 @@ int CMasternodeMan::ProcessMNBroadcast(CNode* pfrom, CMasternodeBroadcast& mnb)
 
     // make sure it's still unspent
     //  - this is checked later by .check() in many places and by ThreadCheckObfuScationPool()
-    if (mnb.CheckInputsAndAdd(nDoS)) {
+    if (mnb.CheckInputsAndAdd(GetBestHeight(), nDoS)) {
         // use this as a peer
         g_connman->AddNewAddress(CAddress(mnb.addr, NODE_NETWORK), pfrom->addr, 2 * 60 * 60);
         masternodeSync.AddedMasternodeList(mnbHash);
@@ -718,7 +719,7 @@ int CMasternodeMan::ProcessGetMNList(CNode* pfrom, CTxIn& vin)
         //local network
         bool isLocal = (pfrom->addr.IsRFC1918() || pfrom->addr.IsLocal());
 
-        if (!isLocal && Params().NetworkID() == CBaseChainParams::MAIN) {
+        if (!isLocal && Params().NetworkIDString() == CBaseChainParams::MAIN) {
             std::map<CNetAddr, int64_t>::iterator i = mAskedUsForMasternodeList.find(pfrom->addr);
             if (i != mAskedUsForMasternodeList.end()) {
                 int64_t t = (*i).second;
@@ -814,7 +815,7 @@ void CMasternodeMan::Remove(const COutPoint& collateralOut)
     }
 }
 
-void CMasternodeMan::UpdateMasternodeList(CMasternodeBroadcast mnb)
+void CMasternodeMan::UpdateMasternodeList(CMasternodeBroadcast& mnb)
 {
     mapSeenMasternodePing.emplace(mnb.lastPing.GetHash(), mnb.lastPing);
     mapSeenMasternodeBroadcast.emplace(mnb.GetHash(), mnb);

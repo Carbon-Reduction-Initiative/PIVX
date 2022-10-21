@@ -11,5 +11,4 @@ QT_TS = \
   qt/locale/cari_nl.ts \
   qt/locale/cari_pl.ts \
   qt/locale/cari_ru.ts \
-  qt/locale/cari_tr.ts \
   qt/locale/cari_zh_CN.ts

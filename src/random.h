@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2018 The Bitcoin developers
-// Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2019 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -44,14 +44,14 @@ void GetStrongRandBytes(unsigned char* buf, int num);
  */
 class FastRandomContext {
 private:
-    bool requires_seed;
+    bool requires_seed{false};
     ChaCha20 rng;
 
     unsigned char bytebuf[64];
-    int bytebuf_size;
+    int bytebuf_size{0};
 
-    uint64_t bitbuf;
-    int bitbuf_size;
+    uint64_t bitbuf{0};
+    int bitbuf_size{0};
 
     void RandomSeed();
 

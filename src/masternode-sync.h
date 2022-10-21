@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -97,6 +97,8 @@ public:
     bool IsMasternodeListSynced();
     bool IsBlockchainSynced();
     void ClearFulfilledRequest();
+
+    bool IsBlockchainSyncedReadOnly() const;
 
     // Sync message dispatcher
     bool MessageDispatcher(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);

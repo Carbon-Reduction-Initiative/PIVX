@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2017-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -40,7 +40,7 @@ bool SignBlock(CBlock& block, const CKeyStore& keystore)
     return SignBlockWithKey(block, key);
 }
 
-bool CheckBlockSignature(const CBlock& block, const bool enableP2PKH)
+bool CheckBlockSignature(const CBlock& block)
 {
     if (block.IsProofOfWork())
         return block.vchBlockSig.empty();
@@ -48,8 +48,8 @@ bool CheckBlockSignature(const CBlock& block, const bool enableP2PKH)
     if (block.vchBlockSig.empty())
         return error("%s: vchBlockSig is empty!", __func__);
 
-    /** Each block is signed by the private key of the input that is staked. This can be either zCARI or normal UTXO
-     *  zCARI: Each zCARI has a keypair associated with it. The serial number is a hash of the public key.
+    /** Each block is signed by the private key of the input that is staked. This can be either zPIV or normal UTXO
+     *  zPIV: Each zPIV has a keypair associated with it. The serial number is a hash of the public key.
      *  UTXO: The public key that signs must match the public key associated with the first utxo of the coinstake tx.
      */
     CPubKey pubkey;
@@ -63,13 +63,6 @@ bool CheckBlockSignature(const CBlock& block, const bool enableP2PKH)
         const CTxOut& txout = block.vtx[1]->vout[1];
         if (!Solver(txout.scriptPubKey, whichType, vSolutions))
             return false;
-
-        if (!enableP2PKH) {
-            // Before v5 activation, P2PKH was always failing.
-            if (whichType == TX_PUBKEYHASH) {
-                return false;
-            }
-        }
 
         if (whichType == TX_PUBKEY) {
             valtype& vchPubKey = vSolutions[0];

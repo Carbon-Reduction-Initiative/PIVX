@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2016 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -68,12 +68,20 @@ OperationResult initMasternode(const std::string& _strMasterNodePrivKey, const s
 
     activeMasternode.pubKeyMasternode = pubkey;
     activeMasternode.privKeyMasternode = key;
+    activeMasternode.service = addrTest;
     fMasterNode = true;
+
+    if (masternodeSync.IsBlockchainSynced()) {
+        // Check if the masternode already exists in the list
+        CMasternode* pmn = mnodeman.Find(pubkey);
+        if (pmn) activeMasternode.EnableHotColdMasterNode(pmn->vin, pmn->addr);
+    }
+
     return OperationResult(true);
 }
 
 //
-// Bootup the Masternode, look for a 1000 CARI input and register on the network
+// Bootup the Masternode, look for a 10000 CARI input and register on the network
 //
 void CActiveMasternode::ManageStatus()
 {
@@ -91,11 +99,15 @@ void CActiveMasternode::ManageStatus()
     if (status == ACTIVE_MASTERNODE_SYNC_IN_PROCESS) status = ACTIVE_MASTERNODE_INITIAL;
 
     if (status == ACTIVE_MASTERNODE_INITIAL) {
-        CMasternode* pmn;
-        pmn = mnodeman.Find(pubKeyMasternode);
-        if (pmn != nullptr) {
-            if (pmn->IsEnabled() && pmn->protocolVersion == PROTOCOL_VERSION)
-                EnableHotColdMasterNode(pmn->vin, pmn->addr);
+        CMasternode* pmn = mnodeman.Find(pubKeyMasternode);
+        if (pmn) {
+            if (pmn->protocolVersion != PROTOCOL_VERSION) {
+                LogPrintf("%s: ERROR Trying to start a masternode running an old protocol version, "
+                          "the controller and masternode wallets need to be running the latest release version.\n", __func__);
+                return;
+            }
+            // Update vin and service
+            EnableHotColdMasterNode(pmn->vin, pmn->addr);
         }
     }
 
@@ -104,30 +116,20 @@ void CActiveMasternode::ManageStatus()
         status = ACTIVE_MASTERNODE_NOT_CAPABLE;
         notCapableReason = "";
 
-        if (strMasterNodeAddr.empty()) {
-            if (!GetLocal(service)) {
-                notCapableReason = "Can't detect external address. Please use the masternodeaddr configuration option.";
-                LogPrintf("CActiveMasternode::ManageStatus() - not capable: %s\n", notCapableReason);
-                return;
-            }
-        } else {
-            int nPort = 0;
-            std::string strHost;
-            SplitHostPort(strMasterNodeAddr, nPort, strHost);
-            service = LookupNumeric(strHost.c_str(), nPort);
-        }
-
-        // The service needs the correct default port to work properly
-        if (!CMasternodeBroadcast::CheckDefaultPort(service, notCapableReason, "CActiveMasternode::ManageStatus()")) {
-            return;
-        }
-
-        LogPrintf("CActiveMasternode::ManageStatus() - Checking inbound connection to '%s'\n", service.ToString());
+        LogPrintf("%s - Checking inbound connection for masternode to '%s'\n", __func__ , service.ToString());
 
         CAddress addr(service, NODE_NETWORK);
-        if (!g_connman->OpenNetworkConnection(addr, true, nullptr)) {
-            notCapableReason = "Could not connect to " + service.ToString();
-            LogPrintf("CActiveMasternode::ManageStatus() - not capable: %s\n", notCapableReason);
+        if (!g_connman->IsNodeConnected(addr)) {
+            CNode* node = g_connman->ConnectNode(addr);
+            if (!node) {
+                notCapableReason =
+                        "Masternode address:port connection availability test failed, could not open a connection to the public masternode address (" +
+                        service.ToString() + ")";
+                LogPrintf("%s - not capable: %s\n", __func__, notCapableReason);
+            } else {
+                // don't leak allocated object in memory
+                delete node;
+            }
             return;
         }
 
@@ -185,7 +187,7 @@ bool CActiveMasternode::SendMasternodePing(std::string& errorMessage)
 
     const uint256& nBlockHash = mnodeman.GetBlockHashToPing();
     CMasternodePing mnp(*vin, nBlockHash, GetAdjustedTime());
-    if (!mnp.Sign(privKeyMasternode, pubKeyMasternode)) {
+    if (!mnp.Sign(privKeyMasternode, pubKeyMasternode.GetID())) {
         errorMessage = "Couldn't sign Masternode Ping";
         return false;
     }

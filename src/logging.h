@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2018 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -64,6 +64,7 @@ namespace BCLog {
         MNPING      = (1 << 24),
         LEGACYZC    = (1 << 25),
         SAPLING     = (1 << 26),
+        SPORKS      = (1 << 27),
         ALL         = ~(uint32_t)0,
     };
 
@@ -97,7 +98,7 @@ namespace BCLog {
         std::atomic<bool> m_reopen_file{false};
 
         /** Send a string to the log output */
-        int LogPrintStr(const std::string &str);
+        void LogPrintStr(const std::string &str);
 
         /** Returns whether logs will be written to any output */
         bool Enabled() const { return m_print_to_console || m_print_to_file; }

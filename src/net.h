@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -211,6 +211,9 @@ public:
     };
 
     void RelayInv(CInv& inv);
+    bool IsNodeConnected(const CAddress& addr);
+    // Retrieves a connected peer (if connection success). Used only to check peer address availability for now.
+    CNode* ConnectNode(CAddress addrConnect);
 
     // Addrman functions
     size_t GetAddressCount() const;
@@ -326,22 +329,22 @@ private:
     // Network usage totals
     RecursiveMutex cs_totalBytesRecv;
     RecursiveMutex cs_totalBytesSent;
-    uint64_t nTotalBytesRecv;
-    uint64_t nTotalBytesSent;
+    uint64_t nTotalBytesRecv{0};
+    uint64_t nTotalBytesSent{0};
 
     // Whitelisted ranges. Any node connecting from these is automatically
     // whitelisted (as well as those connecting to whitelisted binds).
     std::vector<CSubNet> vWhitelistedRange;
     RecursiveMutex cs_vWhitelistedRange;
 
-    unsigned int nSendBufferMaxSize;
-    unsigned int nReceiveFloodSize;
+    unsigned int nSendBufferMaxSize{0};
+    unsigned int nReceiveFloodSize{0};
 
     std::vector<ListenSocket> vhListenSocket;
     banmap_t setBanned;
     RecursiveMutex cs_setBanned;
-    bool setBannedIsDirty;
-    bool fAddressesInitialized;
+    bool setBannedIsDirty{false};
+    bool fAddressesInitialized{false};
     CAddrMan addrman;
     std::deque<std::string> vOneShots;
     RecursiveMutex cs_vOneShots;
@@ -353,23 +356,23 @@ private:
     std::atomic<NodeId> nLastNodeId;
 
     /** Services this instance offers */
-    ServiceFlags nLocalServices;
+    ServiceFlags nLocalServices{NODE_NONE};
 
     /** Services this instance cares about */
-    ServiceFlags nRelevantServices;
+    ServiceFlags nRelevantServices{NODE_NONE};
 
-    CSemaphore *semOutbound;
-    int nMaxConnections;
-    int nMaxOutbound;
-    int nMaxFeeler;
+    CSemaphore *semOutbound{nullptr};
+    int nMaxConnections{0};
+    int nMaxOutbound{0};
+    int nMaxFeeler{0};
     std::atomic<int> nBestHeight;
-    CClientUIInterface* clientInterface;
+    CClientUIInterface* clientInterface{nullptr};
 
     /** SipHasher seeds for deterministic randomness */
-    const uint64_t nSeed0, nSeed1;
+    const uint64_t nSeed0{0}, nSeed1{0};
 
     /** flag for waking the message processor. */
-    bool fMsgProcWake;
+    bool fMsgProcWake{false};
 
     std::condition_variable condMsgProc;
     std::mutex mutexMsgProc;
@@ -580,7 +583,7 @@ public:
     // a) it allows us to not relay tx invs before receiving the peer's version message
     // b) the peer may tell us in their version message that we should not relay tx invs
     //    until they have initialized their bloom filter.
-    bool fRelayTxes;
+    bool fRelayTxes; //protected by cs_filter
     CSemaphoreGrant grantOutbound;
     RecursiveMutex cs_filter;
     CBloomFilter* pfilter;
@@ -610,11 +613,24 @@ public:
 
     // inventory based relay
     CRollingBloomFilter filterInventoryKnown;
-    std::vector<CInv> vInventoryToSend;
+    // Set of transaction ids we still have to announce.
+    // They are sorted by the mempool before relay, so the order is not important.
+    std::set<uint256> setInventoryTxToSend;
+    // List of block ids we still have announce.
+    // There is no final sorting before sending, as they are always sent immediately
+    // and in the order requested.
+    std::vector<uint256> vInventoryBlockToSend;
+    // Set of tier two messages ids we still have to announce.
+    std::vector<CInv> vInventoryTierTwoToSend;
     RecursiveMutex cs_inventory;
     std::multimap<int64_t, CInv> mapAskFor;
     std::vector<uint256> vBlockRequested;
     int64_t nNextInvSend;
+    // Used for BIP35 mempool sending, also protected by cs_inventory
+    bool fSendMempool;
+
+    // Last time a "MEMPOOL" request was serviced.
+    std::atomic<int64_t> timeLastMempoolReq{0};
 
     // Ping time measurement:
     // The pong reply we're expecting, or 0 if no pong expected.
@@ -735,11 +751,15 @@ public:
 
     void PushInventory(const CInv& inv)
     {
-        {
-            LOCK(cs_inventory);
-            if (inv.type == MSG_TX && filterInventoryKnown.contains(inv.hash))
-                return;
-            vInventoryToSend.push_back(inv);
+        LOCK(cs_inventory);
+        if (inv.type == MSG_TX) {
+            if (!filterInventoryKnown.contains(inv.hash)) {
+                setInventoryTxToSend.insert(inv.hash);
+            }
+        } else if (inv.type == MSG_BLOCK) {
+            vInventoryBlockToSend.push_back(inv.hash);
+        } else {
+            vInventoryTierTwoToSend.emplace_back(inv);
         }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -67,7 +67,7 @@ private:
     bool checkMNsNetwork();
     void startAlias(QString strAlias);
     bool startAll(QString& failedMN, bool onlyMissing);
-    bool startMN(CMasternodeConfig::CMasternodeEntry mne, std::string& strError);
+    bool startMN(const CMasternodeConfig::CMasternodeEntry& mne, std::string& strError);
 };
 
 #endif // MASTERNODESWIDGET_H

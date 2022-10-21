@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2016-2020 The PIVX developers
+// Copyright (c) 2016-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -33,7 +33,11 @@ class CMessageHeader
 public:
     typedef unsigned char MessageStartChars[MESSAGE_START_SIZE];
 
-    CMessageHeader(const MessageStartChars& pchMessageStartIn);
+    explicit CMessageHeader(const MessageStartChars& pchMessageStartIn);
+
+    /** Construct a P2P message header from message-start characters, a command and the size of the message.
+     * @note Passing in a `pszCommand` longer than COMMAND_SIZE will result in a run-time assertion error.
+     */
     CMessageHeader(const MessageStartChars& pchMessageStartIn, const char* pszCommand, unsigned int nMessageSizeIn);
 
     std::string GetCommand() const;
@@ -330,8 +334,8 @@ public:
             READWRITE(nTime);
         uint64_t nServicesInt = nServices;
         READWRITE(nServicesInt);
-        nServices = (ServiceFlags)nServicesInt;
-        READWRITE(*(CService*)this);
+        nServices = static_cast<ServiceFlags>(nServicesInt);
+        READWRITE(*static_cast<CService*>(this));
     }
 
     // TODO: make private (improves encapsulation)

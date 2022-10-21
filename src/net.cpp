@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -285,7 +285,7 @@ CNode* CConnman::FindNode(const CNetAddr& ip)
 {
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes)
-        if ((CNetAddr)pnode->addr == ip)
+        if (static_cast<CNetAddr>(pnode->addr) == ip)
             return (pnode);
     return NULL;
 }
@@ -294,7 +294,7 @@ CNode* CConnman::FindNode(const CSubNet& subNet)
 {
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes)
-    if (subNet.Match((CNetAddr)pnode->addr))
+    if (subNet.Match(static_cast<CNetAddr>(pnode->addr)))
         return (pnode);
     return NULL;
 }
@@ -317,7 +317,7 @@ CNode* CConnman::FindNode(const CService& addr)
     for (CNode* pnode : vNodes) {
         if (isRegTestNet) {
             //if using regtest, just check the IP
-            if ((CNetAddr)pnode->addr == (CNetAddr)addr)
+            if (static_cast<CNetAddr>(pnode->addr) == static_cast<CNetAddr>(addr))
                 return (pnode);
         } else {
             if (pnode->addr == addr)
@@ -346,7 +346,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char* pszDest, bool fCo
         }
 
         // Look for an existing connection
-        CNode* pnode = FindNode((CService)addrConnect);
+        CNode* pnode = FindNode(static_cast<CService>(addrConnect));
         if (pnode) {
             LogPrintf("Failed to open new connection, already connected\n");
             return nullptr;
@@ -505,7 +505,7 @@ void CConnman::Ban(const CSubNet& subNet, const BanReason &banReason, int64_t ba
     {
         LOCK(cs_vNodes);
         for (CNode* pnode : vNodes) {
-            if (subNet.Match((CNetAddr)pnode->addr))
+            if (subNet.Match(static_cast<CNetAddr>(pnode->addr)))
                 pnode->fDisconnect = true;
         }
     }
@@ -1813,7 +1813,7 @@ bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFai
     }
     if (!pszDest) {
         if (IsLocal(addrConnect) ||
-            FindNode((CNetAddr)addrConnect) || IsBanned(addrConnect) ||
+            FindNode(static_cast<CNetAddr>(addrConnect)) || IsBanned(addrConnect) ||
             FindNode(addrConnect.ToStringIPPort()))
             return false;
     } else if (FindNode(pszDest))
@@ -2142,7 +2142,7 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
     threadMessageHandler = std::thread(&TraceThread<std::function<void()> >, "msghand", std::function<void()>(std::bind(&CConnman::ThreadMessageHandler, this)));
 
     // Dump network addresses
-    scheduler.scheduleEvery(boost::bind(&CConnman::DumpData, this), DUMP_ADDRESSES_INTERVAL);
+    scheduler.scheduleEvery(std::bind(&CConnman::DumpData, this), DUMP_ADDRESSES_INTERVAL * 1000);
 
     return true;
 }
@@ -2438,12 +2438,14 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     hashContinue = UINT256_ZERO;
     nStartingHeight = -1;
     filterInventoryKnown.reset();
+    fSendMempool = false;
     fGetAddr = false;
     nNextLocalAddrSend = 0;
     nNextAddrSend = 0;
     nNextInvSend = 0;
     fRelayTxes = false;
     pfilter = new CBloomFilter();
+    timeLastMempoolReq = 0;
     nPingNonceSent = 0;
     nPingUsecStart = 0;
     nPingUsecTime = 0;
@@ -2554,6 +2556,16 @@ bool CConnman::ForNode(NodeId id, std::function<bool(CNode* pnode)> func)
         }
     }
     return found != nullptr && NodeFullyConnected(found) && func(found);
+}
+
+bool CConnman::IsNodeConnected(const CAddress& addr)
+{
+    return FindNode(addr.ToStringIPPort());
+}
+
+CNode* CConnman::ConnectNode(CAddress addrConnect)
+{
+    return ConnectNode(addrConnect, nullptr, true);
 }
 
 // valid, reachable and routable address (except for RegTest)

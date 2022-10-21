@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -91,6 +91,10 @@ ReceiveWidget::ReceiveWidget(CARIGUI* parent) :
     ui->container_right->addItem(spacer);
     ui->listViewAddress->setVisible(false);
 
+    // My Address search filter
+    initCssEditLine(ui->lineEditFilter, true);
+    ui->lineEditFilter->setStyleSheet("font: 14px;");
+
     // Sort Controls
     SortEdit* lineEdit = new SortEdit(ui->comboBoxSort);
     connect(lineEdit, &SortEdit::Mouse_Pressed, [this](){ui->comboBoxSort->showPopup();});
@@ -108,6 +112,7 @@ ReceiveWidget::ReceiveWidget(CARIGUI* parent) :
     connect(ui->listViewAddress, &QListView::clicked, this, &ReceiveWidget::handleAddressClicked);
     connect(ui->btnRequest, &OptionButton::clicked, this, &ReceiveWidget::onRequestClicked);
     connect(ui->btnMyAddresses, &OptionButton::clicked, this, &ReceiveWidget::onMyAddressesClicked);
+    connect(ui->lineEditFilter, &QLineEdit::textChanged, [this](){filterChanged(ui->lineEditFilter->text());});
 
     ui->pushLeft->setChecked(true);
     connect(ui->pushLeft, &QPushButton::clicked, [this](){onTransparentSelected(true);});
@@ -334,6 +339,11 @@ void ReceiveWidget::onSortOrderChanged(int idx)
 {
     sortOrder = (Qt::SortOrder) ui->comboBoxSortOrder->itemData(idx).toInt();
     sortAddresses();
+}
+
+void ReceiveWidget::filterChanged(const QString& str)
+{
+    this->filter->setFilterRegExp(str);
 }
 
 void ReceiveWidget::sortAddresses()

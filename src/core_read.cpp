@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2015-2019 The PIVX developers
+// Copyright (c) 2015-2019 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,7 +17,6 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/assign/list_of.hpp>
 
 #include <univalue.h>
 
@@ -33,14 +32,14 @@ CScript ParseScript(std::string s)
             if (op < OP_NOP && op != OP_RESERVED)
                 continue;
 
-            const char* name = GetOpName((opcodetype)op);
+            const char* name = GetOpName(static_cast<opcodetype>(op));
             if (strcmp(name, "OP_UNKNOWN") == 0)
                 continue;
             std::string strName(name);
-            mapOpNames[strName] = (opcodetype)op;
+            mapOpNames[strName] = static_cast<opcodetype>(op);
             // Convenience: OP_ADD and just ADD are both recognized:
             boost::algorithm::replace_first(strName, "OP_", "");
-            mapOpNames[strName] = (opcodetype)op;
+            mapOpNames[strName] = static_cast<opcodetype>(op);
         }
     }
 
@@ -75,7 +74,7 @@ CScript ParseScript(std::string s)
     return result;
 }
 
-bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx)
+bool DecodeHexTx(CMutableTransaction& tx, const std::string& strHexTx)
 {
     if (!IsHex(strHexTx))
         return false;

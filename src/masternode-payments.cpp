@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -217,7 +217,7 @@ bool IsBlockValueValid(int nHeight, CAmount& nExpectedValue, CAmount nMinted)
         //there is no budget data to use to check anything
         //super blocks will always be on these blocks, max 100 per budgeting
         if (nHeight % Params().GetConsensus().nBudgetCycleBlocks < 100) {
-            if (Params().NetworkID() == CBaseChainParams::TESTNET) {
+            if (Params().IsTestnet()) {
                 return true;
             }
             nExpectedValue += g_budgetman.GetTotalBudget(nHeight);
@@ -267,10 +267,6 @@ bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight)
         }
     }
 
-    // No Masternode Payments during PoW
-    if (!isPoSActive)
-        return true;
-
     // If we end here the transaction was either TrxValidationStatus::InValid and Budget enforcement is disabled, or
     // a double budget payment (status = TrxValidationStatus::DoublePayment) was detected, or no/not enough masternode
     // votes (status = TrxValidationStatus::VoteThreshold) for a finalized budget were found
@@ -312,9 +308,6 @@ void CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, const int n
 {
     if (nHeight == 0) return;
 
-    const bool isPoSActive = Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_POS);
-    if (!isPoSActive) return;
-
     bool hasPayment = true;
     CScript payee;
 
@@ -331,7 +324,7 @@ void CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, const int n
     }
 
     if (hasPayment) {
-        CAmount masternodePayment = GetMasternodePayment(nHeight);
+        CAmount masternodePayment = GetMasternodePayment();
         if (fProofOfStake) {
             /**For Proof Of Stake vout[0] must be null
              * Stake reward can be split into many different outputs, so we must
@@ -387,7 +380,7 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
         int nCountNeeded;
         vRecv >> nCountNeeded;
 
-        if (Params().NetworkID() == CBaseChainParams::MAIN) {
+        if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
             if (pfrom->HasFulfilledRequest(NetMsgType::GETMNWINNERS)) {
                 LogPrintf("CMasternodePayments::ProcessMessageMasternodePayments() : mnget - peer already asked me for the list\n");
                 LOCK(cs_main);
@@ -437,7 +430,8 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
             return;
         }
 
-        if (!winner.CheckSignature()) {
+        const CMasternode* pmn = mnodeman.Find(winner.vinMasternode.prevout);
+        if (!pmn || !winner.CheckSignature(pmn->pubKeyMasternode.GetID())) {
             if (masternodeSync.IsSynced()) {
                 LogPrintf("CMasternodePayments::ProcessMessageMasternodePayments() : mnw - invalid signature\n");
                 LOCK(cs_main);
@@ -522,7 +516,7 @@ bool CMasternodePayments::AddWinningMasternode(CMasternodePaymentWinner& winnerI
     return true;
 }
 
-bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew, int nBlockHeight)
+bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
 {
     LOCK(cs_vecPayments);
 
@@ -536,7 +530,7 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew, int n
     if (nMaxSignatures < MNPAYMENTS_SIGNATURES_REQUIRED) return true;
 
     std::string strPayeesPossible = "";
-    CAmount requiredMasternodePayment = GetMasternodePayment(nBlockHeight);
+    CAmount requiredMasternodePayment = GetMasternodePayment();
 
     for (CMasternodePayee& payee : vecPayments) {
         bool found = false;
@@ -601,7 +595,7 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
     LOCK(cs_mapMasternodeBlocks);
 
     if (mapMasternodeBlocks.count(nBlockHeight)) {
-        return mapMasternodeBlocks[nBlockHeight].IsTransactionValid(txNew,nBlockHeight);
+        return mapMasternodeBlocks[nBlockHeight].IsTransactionValid(txNew);
     }
 
     return true;
@@ -683,7 +677,7 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
     activeMasternode.GetKeys(keyMasternode, pubKeyMasternode);
 
     LogPrint(BCLog::MASTERNODE,"CMasternodePayments::ProcessBlock() - Signing Winner\n");
-    if (newWinner.Sign(keyMasternode, pubKeyMasternode)) {
+    if (newWinner.Sign(keyMasternode, pubKeyMasternode.GetID())) {
         LogPrint(BCLog::MASTERNODE,"CMasternodePayments::ProcessBlock() - AddWinningMasternode\n");
 
         if (AddWinningMasternode(newWinner)) {

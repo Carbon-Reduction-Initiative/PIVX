@@ -143,7 +143,7 @@ LIBSAPLING_H = \
   sapling/sapling_operation.h
 
 .PHONY: FORCE cargo-build check-symbols check-security
-# pivx core #
+# cari core #
 BITCOIN_CORE_H = \
   activemasternode.h \
   addrdb.h \
@@ -189,11 +189,12 @@ BITCOIN_CORE_H = \
   hash.h \
   httprpc.h \
   httpserver.h \
+  indirectmap.h \
   init.h \
-  interface/wallet.h \
+  interfaces/handler.h \
+  interfaces/wallet.h \
   invalid.h \
   invalid_outpoints.json.h \
-  invalid_serials.json.h \
   legacy/stakemodifier.h \
   kernel.h \
   key.h \
@@ -218,6 +219,7 @@ BITCOIN_CORE_H = \
   masternodeconfig.h \
   merkleblock.h \
   messagesigner.h \
+  blockassembler.h \
   miner.h \
   moneysupply.h \
   net.h \
@@ -291,7 +293,6 @@ BITCOIN_CORE_H = \
   wallet/walletdb.h \
   warnings.h \
   zcarichain.h \
-  zcari/deterministicmint.h \
   zcari/mintpool.h \
   zcari/zerocoin.h \
   zcari/zpos.h \
@@ -326,6 +327,7 @@ libbitcoin_server_a_SOURCES = \
   legacy/validation_zerocoin_legacy.cpp \
   sapling/sapling_validation.cpp \
   merkleblock.cpp \
+  blockassembler.cpp \
   miner.cpp \
   net.cpp \
   net_processing.cpp \
@@ -373,7 +375,7 @@ libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_wallet_a_SOURCES = \
   activemasternode.cpp \
   bip38.cpp \
-  interface/wallet.cpp \
+  interfaces/wallet.cpp \
   addressbook.cpp \
   crypter.cpp \
   key_io.cpp \
@@ -400,7 +402,6 @@ libbitcoin_wallet_a_SOURCES = \
   destination_io.cpp \
   wallet/wallet.cpp \
   wallet/walletdb.cpp \
-  zcari/deterministicmint.cpp \
   zcari/zerocoin.cpp \
   zcari/mintpool.cpp \
   stakeinput.cpp \
@@ -493,7 +494,6 @@ libbitcoin_common_a_SOURCES = \
   compressor.cpp \
   consensus/merkle.cpp \
   primitives/block.cpp \
-  zcari/deterministicmint.cpp \
   primitives/transaction.cpp \
   zcari/zerocoin.cpp \
   core_read.cpp \
@@ -533,6 +533,7 @@ libbitcoin_util_a_SOURCES = \
   compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
   fs.cpp \
+  interfaces/handler.cpp \
   logging.cpp \
   random.cpp \
   rpc/protocol.cpp \
@@ -579,7 +580,7 @@ libsapling_a_SOURCES += compat/glibc_compat.cpp
 AM_LDFLAGS += $(COMPAT_LDFLAGS)
 endif
 
-# cli: shared between pivx-cli and pivx-qt
+# cli: shared between cari-cli and cari-qt
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_cli_a_SOURCES = \

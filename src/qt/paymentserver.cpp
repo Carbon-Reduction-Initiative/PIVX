@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -194,9 +194,9 @@ void PaymentServer::ipcParseCommandLine(int argc, char* argv[])
 
             SendCoinsRecipient r;
             if (GUIUtil::parseBitcoinURI(arg, &r) && !r.address.isEmpty()) {
-                if (IsValidDestinationString(r.address.toStdString(), false, Params(CBaseChainParams::MAIN))) {
+                if (IsValidDestinationString(r.address.toStdString(), false, *CreateChainParams(CBaseChainParams::MAIN))) {
                     SelectParams(CBaseChainParams::MAIN);
-                } else if (IsValidDestinationString(r.address.toStdString(), false, Params(CBaseChainParams::TESTNET))) {
+                } else if (IsValidDestinationString(r.address.toStdString(), false, *CreateChainParams(CBaseChainParams::TESTNET))) {
                     SelectParams(CBaseChainParams::TESTNET);
                 }
             }
@@ -547,7 +547,7 @@ void PaymentServer::fetchRequest(const QUrl& url)
     netManager->get(netRequest);
 }
 
-void PaymentServer::fetchPaymentACK(CWallet* wallet, SendCoinsRecipient recipient, QByteArray transaction)
+void PaymentServer::fetchPaymentACK(CWallet* wallet, const SendCoinsRecipient& recipient, const QByteArray& transaction)
 {
     const payments::PaymentDetails& details = recipient.paymentRequest.getDetails();
     if (!details.has_payment_url())
