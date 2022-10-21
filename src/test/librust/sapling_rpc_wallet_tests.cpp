@@ -1,5 +1,5 @@
 // Copyright (c) 2016-2020 The ZCash developers
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -87,7 +87,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    {
+        LOCK(pwalletMain->cs_wallet);
+        pwalletMain->SetMinVersion(FEATURE_SAPLING);
+        pwalletMain->SetupSPKM(false);
+    }
 
     BOOST_CHECK_THROW(CallRPC("getshieldbalance too many args"), std::runtime_error);
     BOOST_CHECK_THROW(CallRPC("getshieldbalance invalidaddress"), std::runtime_error);
@@ -249,7 +253,11 @@ BOOST_AUTO_TEST_CASE(rpc_shieldsendmany_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    {
+        LOCK(pwalletMain->cs_wallet);
+        pwalletMain->SetMinVersion(FEATURE_SAPLING);
+        pwalletMain->SetupSPKM(false);
+    }
 
     BOOST_CHECK_THROW(CallRPC("shieldsendmany"), std::runtime_error);
     BOOST_CHECK_THROW(CallRPC("shieldsendmany toofewargs"), std::runtime_error);
@@ -299,7 +307,6 @@ BOOST_AUTO_TEST_CASE(rpc_shieldsendmany_parameters)
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    pwalletMain->SetupSPKM(false);
     auto pa = pwalletMain->GenerateNewSaplingZKey();
     std::string zaddr1 = KeyIO::EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(std::string("shieldsendmany yBYhwgzufrZ6F5VVuK9nEChENArq934mqC ")
@@ -408,24 +415,28 @@ BOOST_AUTO_TEST_CASE(rpc_shieldsendmany_taddr_to_sapling)
     // Add a fake transaction to the wallet
     CMutableTransaction mtx;
     mtx.vout.emplace_back(5 * COIN, GetScriptForDestination(taddr));
-    CWalletTx wtx(pwalletMain, mtx);
-    pwalletMain->LoadToWallet(wtx);
+    // Add to wallet and get the updated wtx
+    CWalletTx wtxIn(pwalletMain, MakeTransactionRef(mtx));
+    pwalletMain->LoadToWallet(wtxIn);
+    CWalletTx& wtx = pwalletMain->mapWallet.at(mtx.GetHash());
 
     // Fake-mine the transaction
     BOOST_CHECK_EQUAL(0, chainActive.Height());
     CBlock block;
     block.hashPrevBlock = chainActive.Tip()->GetBlockHash();
-    block.vtx.emplace_back(MakeTransactionRef(wtx));
+    block.vtx.emplace_back(wtx.tx);
     block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     fakeIndex.nHeight = 1;
-    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    BlockMap::iterator mi = mapBlockIndex.emplace(blockHash, &fakeIndex).first;
+    fakeIndex.phashBlock = &((*mi).first);
     chainActive.SetTip(&fakeIndex);
     BOOST_CHECK(chainActive.Contains(&fakeIndex));
     BOOST_CHECK_EQUAL(1, chainActive.Height());
-    wtx.SetMerkleBranch(blockHash, 0);
-    pwalletMain->LoadToWallet(wtx);
+    std::vector<CTransactionRef> vtxConflicted;
+    pwalletMain->BlockConnected(std::make_shared<CBlock>(block), mi->second, vtxConflicted);
+    BOOST_CHECK_MESSAGE(pwalletMain->GetAvailableBalance() > 0, "tx not confirmed");
 
     // Context that shieldsendmany requires
     auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
@@ -449,8 +460,7 @@ BOOST_AUTO_TEST_CASE(rpc_shieldsendmany_taddr_to_sapling)
     // Test mode does not send the transaction to the network.
     auto hexTx = EncodeHexTx(operation.getFinalTx());
     CDataStream ss(ParseHex(hexTx), SER_NETWORK, PROTOCOL_VERSION);
-    CTransaction tx;
-    ss >> tx;
+    CTransaction tx(deserialize, ss);
     BOOST_ASSERT(!tx.sapData->vShieldedOutput.empty());
 
     // We shouldn't be able to decrypt with the empty ovk
@@ -542,8 +552,10 @@ BOOST_AUTO_TEST_CASE(rpc_listshieldunspent_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->SetupSPKM(false);
+    {
+        LOCK(pwalletMain->cs_wallet);
+        pwalletMain->SetupSPKM(false);
+    }
 
     UniValue retValue;
 

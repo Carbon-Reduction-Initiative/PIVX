@@ -7,23 +7,19 @@
 #include "consensus/consensus.h"
 #include "consensus/zerocoin_verify.h"
 #include "sapling/sapling_validation.h"
-#include "script/interpreter.h"
 #include "tiertwo/specialtx_validation.h"
 #include "../validation.h"
 
-bool IsFinalTx(const CTransaction& tx, int nBlockHeight, int64_t nBlockTime)
+bool IsFinalTx(const CTransactionRef& tx, int nBlockHeight, int64_t nBlockTime)
 {
-    AssertLockHeld(cs_main);
     // Time based nLockTime implemented in 0.1.6
-    if (tx.nLockTime == 0)
+    if (tx->nLockTime == 0)
         return true;
-    if (nBlockHeight == 0)
-        nBlockHeight = chainActive.Height();
     if (nBlockTime == 0)
         nBlockTime = GetAdjustedTime();
-    if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
+    if ((int64_t)tx->nLockTime < ((int64_t)tx->nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;
-    for (const CTxIn& txin : tx.vin)
+    for (const CTxIn& txin : tx->vin)
         if (!txin.IsFinal())
             return false;
     return true;
@@ -56,7 +52,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
     return nSigOps;
 }
 
-bool CheckTransaction(const CTransaction& tx, bool fZerocoinActive, bool fRejectBadUTXO, CValidationState& state, bool fFakeSerialAttack, bool fColdStakingActive, bool fSaplingActive)
+bool CheckTransaction(const CTransaction& tx, bool fZerocoinActive, CValidationState& state, bool fFakeSerialAttack, bool fColdStakingActive, bool fSaplingActive)
 {
     // Basic checks that don't depend on any context
     // Transactions containing empty `vin` must have non-empty `vShieldedSpend`.

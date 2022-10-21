@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2014 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,6 +8,7 @@
 #include "consensus/consensus.h"
 #include "policy/fees.h"
 #include "invalid.h"
+#include "logging.h"
 #include "memusage.h"
 #include "random.h"
 
@@ -16,6 +17,7 @@
 bool CCoinsView::GetCoin(const COutPoint& outpoint, Coin& coin) const { return false; }
 bool CCoinsView::HaveCoin(const COutPoint& outpoint) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return UINT256_ZERO; }
+std::vector<uint256> CCoinsView::GetHeadBlocks() const { return std::vector<uint256>(); }
 CCoinsViewCursor *CCoinsView::Cursor() const { return 0; }
 
 bool CCoinsView::BatchWrite(CCoinsMap& mapCoins,
@@ -33,6 +35,7 @@ CCoinsViewBacked::CCoinsViewBacked(CCoinsView* viewIn) : base(viewIn) {}
 bool CCoinsViewBacked::GetCoin(const COutPoint& outpoint, Coin& coin) const { return base->GetCoin(outpoint, coin); }
 bool CCoinsViewBacked::HaveCoin(const COutPoint& outpoint) const { return base->HaveCoin(outpoint); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
+std::vector<uint256> CCoinsViewBacked::GetHeadBlocks() const { return base->GetHeadBlocks(); }
 void CCoinsViewBacked::SetBackend(CCoinsView& viewIn) { base = &viewIn; }
 CCoinsViewCursor *CCoinsViewBacked::Cursor() const { return base->Cursor(); }
 size_t CCoinsViewBacked::EstimateSize() const { return base->EstimateSize(); }
@@ -111,13 +114,20 @@ void CCoinsViewCache::AddCoin(const COutPoint& outpoint, Coin&& coin, bool possi
     cachedCoinsUsage += it->second.coin.DynamicMemoryUsage();
 }
 
-void AddCoins(CCoinsViewCache& cache, const CTransaction& tx, int nHeight)
+void AddCoins(CCoinsViewCache& cache, const CTransaction& tx, int nHeight, bool check, bool fSkipInvalid)
 {
     bool fCoinbase = tx.IsCoinBase();
     bool fCoinstake = tx.IsCoinStake();
     const uint256& txid = tx.GetHash();
     for (size_t i = 0; i < tx.vout.size(); ++i) {
-        cache.AddCoin(COutPoint(txid, i), Coin(tx.vout[i], nHeight, fCoinbase, fCoinstake), false);
+        const COutPoint out(txid, i);
+        // Don't add fraudulent/banned outputs
+        if (fSkipInvalid && invalid_out::ContainsOutPoint(out)) {
+            cache.SpendCoin(out);   // no-op if the coin is not in the cache
+            continue;
+        }
+        bool overwrite = check && cache.HaveCoin(out);
+        cache.AddCoin(out, Coin(tx.vout[i], nHeight, fCoinbase, fCoinstake), overwrite);
     }
 }
 
@@ -405,19 +415,18 @@ CAmount CCoinsViewCache::GetTotalAmount() const
     return nTotal;
 }
 
-void CCoinsViewCache::PruneInvalidEntries()
+bool CCoinsViewCache::PruneInvalidEntries()
 {
     // Prune zerocoin Mints and fraudulent/frozen outputs
-    std::unique_ptr<CCoinsViewCursor> pcursor(Cursor());
-    while (pcursor->Valid()) {
-        COutPoint key;
-        Coin coin;
-        if (pcursor->GetKey(key) && pcursor->GetValue(coin)) {
-            if (coin.out.IsZerocoinMint() || invalid_out::ContainsOutPoint(key))
-                SpendCoin(key);
+    bool loaded = invalid_out::LoadOutpoints();
+    assert(loaded);
+    for (const COutPoint& out: invalid_out::setInvalidOutPoints) {
+        if (HaveCoin(out)) {
+            LogPrintf("Pruning invalid output %s\n", out.ToString());
+            SpendCoin(out);
         }
-        pcursor->Next();
     }
+    return Flush();
 }
 
 static const size_t MAX_OUTPUTS_PER_BLOCK = MAX_BLOCK_SIZE_CURRENT /  ::GetSerializeSize(CTxOut(), SER_NETWORK, PROTOCOL_VERSION); // TODO: merge with similar definition in undo.h.

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -141,7 +141,7 @@ UniValue importprivkey(const JSONRPCRequest& request)
         if (fRescan) {
             CBlockIndex *pindex = chainActive.Genesis();
             if (fStakingAddress && !Params().IsRegTestNet()) {
-                // cold staking was activated after nBlockTimeProtocolV2. No need to scan the whole chain
+                // cold staking was activated after nBlockTimeProtocolV2 (CARI v4.0). No need to scan the whole chain
                 pindex = chainActive[Params().GetConsensus().vUpgrades[Consensus::UPGRADE_V4_0].nActivationHeight];
             }
             pwalletMain->ScanForWalletTransactions(pindex, true);
@@ -332,7 +332,7 @@ UniValue importwallet(const JSONRPCRequest& request)
             continue;
 
         // Sapling keys
-        // Let's see if the address is a valid PIVX spending key
+        // Let's see if the address is a valid CARI spending key
         if (pwalletMain->HasSaplingSPKM()) {
             libzcash::SpendingKey spendingkey = KeyIO::DecodeSpendingKey(vstr[0]);
             int64_t nTime = DecodeDumpTime(vstr[1]);
@@ -434,11 +434,11 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
     CTxDestination dest = DecodeDestination(strAddress);
     if (!IsValidDestination(dest))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid CARI address");
-    CKeyID keyID = *boost::get<CKeyID>(&dest);
+    const CKeyID* keyID = boost::get<CKeyID>(&dest);
     if (!keyID)
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
     CKey vchSecret;
-    if (!pwalletMain->GetKey(keyID, vchSecret))
+    if (!pwalletMain->GetKey(*keyID, vchSecret))
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
     return EncodeSecret(vchSecret);
 }
@@ -467,6 +467,10 @@ UniValue dumpwallet(const JSONRPCRequest& request)
         request.params[0].get_str().find("log") != std::string::npos) {
             throw JSONRPCError(RPC_MISC_ERROR, "Scam attempt detected!");
     }
+
+    // Make sure the results are valid at least up to the most recent block
+    // the user could have gotten from another RPC command prior to now
+    pwalletMain->BlockUntilSyncedToCurrentChain();
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -616,11 +620,11 @@ UniValue bip38encrypt(const JSONRPCRequest& request)
     CTxDestination address = DecodeDestination(strAddress);
     if (!IsValidDestination(address))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid CARI address");
-    CKeyID keyID = *boost::get<CKeyID>(&address);
+    const CKeyID* keyID = boost::get<CKeyID>(&address);
     if (!keyID)
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
     CKey vchSecret;
-    if (!pwalletMain->GetKey(keyID, vchSecret))
+    if (!pwalletMain->GetKey(*keyID, vchSecret))
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
 
     uint256 privKey = vchSecret.GetPrivKey_256();
@@ -675,7 +679,6 @@ UniValue bip38decrypt(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_WALLET_ERROR, "Private Key Not Valid");
 
     CPubKey pubkey = key.GetPubKey();
-    pubkey.IsCompressed();
     assert(key.VerifyPubKey(pubkey));
     result.pushKV("Address", EncodeDestination(pubkey.GetID()));
     CKeyID vchAddress = pubkey.GetID();

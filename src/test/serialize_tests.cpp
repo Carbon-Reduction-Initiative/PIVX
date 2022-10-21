@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
-// Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2019 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -40,10 +40,10 @@ protected:
     bool boolval;
     std::string stringval;
     const char* charstrval;
-    CTransaction txval;
+    CTransactionRef txval;
 public:
     CSerializeMethodsTestSingle() = default;
-    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, CTransaction txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(txvalin){}
+    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, const CTransaction& txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(MakeTransactionRef(txvalin)){}
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
@@ -61,7 +61,7 @@ public:
                 boolval == rhs.boolval && \
                 stringval == rhs.stringval && \
                 strcmp(charstrval, rhs.charstrval) == 0 && \
-                txval == rhs.txval;
+                *txval == *rhs.txval;
     }
 };
 

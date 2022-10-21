@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,8 +21,6 @@
 #include <stdio.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
-
 
 static bool fCreateBlank;
 static std::map<std::string, UniValue> registers;
@@ -35,8 +33,10 @@ static bool AppInitRawTx(int argc, char* argv[])
     gArgs.ParseParameters(argc, argv);
 
     // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-    if (!SelectParamsFromCommandLine()) {
-        fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
+    try {
+        SelectParams(ChainNameFromCommandLine());
+    } catch(const std::exception& e) {
+        fprintf(stderr, "Error: %s\n", e.what());
         return false;
     }
 
@@ -385,7 +385,11 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
             if (!prevOut.isObject())
                 throw std::runtime_error("expected prevtxs internal object");
 
-            std::map<std::string, UniValue::VType> types = boost::assign::map_list_of("txid", UniValue::VSTR)("vout", UniValue::VNUM)("scriptPubKey", UniValue::VSTR);
+            std::map<std::string, UniValue::VType> types = {
+                {"txid", UniValue::VSTR},
+                {"vout", UniValue::VNUM},
+                {"scriptPubKey", UniValue::VSTR}
+            };
             if (!prevOut.checkObject(types))
                 throw std::runtime_error("prevtxs internal object typecheck fail");
 
@@ -588,7 +592,7 @@ static int CommandLineRawTx(int argc, char* argv[])
             argv++;
         }
 
-        CTransaction txDecodeTmp;
+        CMutableTransaction tx;
         int startArg;
 
         if (!fCreateBlank) {
@@ -601,14 +605,12 @@ static int CommandLineRawTx(int argc, char* argv[])
             if (strHexTx == "-") // "-" implies standard input
                 strHexTx = readStdin();
 
-            if (!DecodeHexTx(txDecodeTmp, strHexTx))
+            if (!DecodeHexTx(tx, strHexTx))
                 throw std::runtime_error("invalid transaction encoding");
 
             startArg = 2;
         } else
             startArg = 1;
-
-        CMutableTransaction tx(txDecodeTmp);
 
         for (int i = startArg; i < argc; i++) {
             std::string arg = argv[i];

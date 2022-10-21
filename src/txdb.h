@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2016-2020 The PIVX developers
+// Copyright (c) 2016-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,13 +21,12 @@
 class CCoinsViewDBCursor;
 class uint256;
 
-//! Compensate for extra memory peak (x1.5-x1.9) at flush time.
-static constexpr int DB_PEAK_USAGE_FACTOR = 2;
 //! No need to periodic flush if at least this much space still available.
-static constexpr int MAX_BLOCK_COINSDB_USAGE = 10 * DB_PEAK_USAGE_FACTOR;
-
+static constexpr int MAX_BLOCK_COINSDB_USAGE = 10;
 //! -dbcache default (MiB)
 static const int64_t nDefaultDbCache = 100;
+//! -dbbatchsize default (bytes)
+static const int64_t nDefaultDbBatchSize = 16 << 20;
 //! max. -dbcache in (MiB)
 static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
 //! min. -dbcache in (MiB)
@@ -42,7 +41,7 @@ struct CDiskTxPos : public CDiskBlockPos
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
-        READWRITE(*(CDiskBlockPos*)this);
+        READWRITE(*static_cast<CDiskBlockPos*>(this));
         READWRITE(VARINT(nTxOffset));
     }
 
@@ -74,6 +73,7 @@ public:
     bool GetCoin(const COutPoint& outpoint, Coin& coin) const override;
     bool HaveCoin(const COutPoint& outpoint) const override;
     uint256 GetBestBlock() const override;
+    std::vector<uint256> GetHeadBlocks() const override;
     CCoinsViewCursor* Cursor() const override;
 
     //! Attempt to update from an older database format. Returns whether an error occurred.
@@ -156,11 +156,11 @@ private:
     void operator=(const CZerocoinDB&);
 
 public:
-    /** Write zCARI mints to the zerocoinDB in a batch */
+    /** Write zPIV mints to the zerocoinDB in a batch */
     bool WriteCoinMintBatch(const std::vector<std::pair<libzerocoin::PublicCoin, uint256> >& mintInfo);
     bool ReadCoinMint(const CBigNum& bnPubcoin, uint256& txHash);
     bool ReadCoinMint(const uint256& hashPubcoin, uint256& hashTx);
-    /** Write zCARI spends to the zerocoinDB in a batch */
+    /** Write zPIV spends to the zerocoinDB in a batch */
     bool WriteCoinSpendBatch(const std::vector<std::pair<libzerocoin::CoinSpend, uint256> >& spendInfo);
     bool ReadCoinSpend(const CBigNum& bnSerial, uint256& txHash);
     bool ReadCoinSpend(const uint256& hashSerial, uint256 &txHash);

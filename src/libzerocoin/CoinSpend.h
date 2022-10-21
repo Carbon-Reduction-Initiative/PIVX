@@ -9,7 +9,7 @@
  * @copyright  Copyright 2013 Ian Miers, Christina Garman and Matthew Green
  * @license    This project is released under the MIT license.
  **/
-// Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2017-2020 The CARI developers
 
 #ifndef COINSPEND_H_
 #define COINSPEND_H_
@@ -28,7 +28,7 @@
 
 namespace libzerocoin
 {
-// Lagacy zCARI - Only for serialization
+// Lagacy zPIV - Only for serialization
 // Proof that a value inside a commitment C is accumulated in accumulator A
 class AccumulatorProofOfKnowledge {
 public:
@@ -50,7 +50,7 @@ private:
     CBigNum s_xi, s_phi, s_gamma, s_psi;
 };
 
-// Lagacy zCARI - Only for serialization
+// Lagacy zPIV - Only for serialization
 // Signature of knowledge attesting that the signer knows the values to
 // open a commitment to a coin with given serial number
 class SerialNumberSignatureOfKnowledge {
@@ -70,7 +70,7 @@ private:
     std::vector<CBigNum> sprime;
 };
 
-// Lagacy zCARI - Only for serialization
+// Lagacy zPIV - Only for serialization
 // Proof that two commitments open to the same value (BROKEN)
 class CommitmentProofOfKnowledge {
 public:
@@ -86,7 +86,7 @@ private:
 };
 
 
-// Lagacy zCARI - Only for serialization
+// Lagacy zPIV - Only for serialization
 /** The complete proof needed to spend a zerocoin.
  * Composes together a proof that a coin is accumulated
  * and that it has a given serial number.
@@ -148,17 +148,17 @@ public:
     }
 
 protected:
-    CoinDenomination denomination = ZQ_ERROR;
-    CBigNum coinSerialNumber;
-    uint8_t version;
+    CoinDenomination denomination{ZQ_ERROR};
+    CBigNum coinSerialNumber{};
+    uint8_t version{0};
     //As of version 2
     CPubKey pubkey;
     std::vector<unsigned char> vchSig;
-    SpendType spendType;
-    uint256 ptxHash;
+    SpendType spendType{SPEND};
+    uint256 ptxHash{UINT256_ZERO};
 
 private:
-    uint32_t accChecksum;
+    uint32_t accChecksum{0};
     CBigNum accCommitmentToCoinValue;
     CBigNum serialCommitmentToCoinValue;
     AccumulatorProofOfKnowledge accumulatorPoK;

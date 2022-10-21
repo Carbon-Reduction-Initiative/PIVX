@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2017-2019 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,13 +12,14 @@
 class CBlock;
 class CScript;
 class CTransaction;
+struct CMutableTransaction;
 class uint256;
 class UniValue;
 
 // core_read.cpp
 extern CScript ParseScript(std::string s);
 extern std::string ScriptToAsmStr(const CScript& script, const bool fAttemptSighashDecode = false);
-extern bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
+extern bool DecodeHexTx(CMutableTransaction& tx, const std::string& strHexTx);
 extern bool DecodeHexBlk(CBlock&, const std::string& strHexBlk);
 extern uint256 ParseHashUV(const UniValue& v, const std::string& strName);
 extern uint256 ParseHashStr(const std::string&, const std::string& strName);

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2018 The PIVX developers
+// Copyright (c) 2015-2018 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -111,17 +111,6 @@ public:
     blob88() {}
     blob88(const base_blob<88>& b) : base_blob<88>(b) {}
     explicit blob88(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
-};
-
-/** 160-bit opaque blob.
- * @note This type is called uint160 for historical reasons only. It is an opaque
- * blob of 160 bits and has no integer operations.
- */
-class blob_uint160 : public base_blob<160> {
-public:
-    blob_uint160() {}
-    blob_uint160(const base_blob<160>& b) : base_blob<160>(b) {}
-    explicit blob_uint160(const std::vector<unsigned char>& vch) : base_blob<160>(vch) {}
 };
 
 /** 256-bit opaque blob.

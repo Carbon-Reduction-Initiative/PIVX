@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -23,7 +23,7 @@ class CBlockHeader
 {
 public:
     // header
-    static const int32_t CURRENT_VERSION=7;     //!> Version 7 removes nAccumulatorCheckpoint from serialization
+    static const int32_t CURRENT_VERSION=10;    // since v5.1.99
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -31,7 +31,7 @@ public:
     uint32_t nBits;
     uint32_t nNonce;
     uint256 nAccumulatorCheckpoint;             // only for version 4, 5 and 6.
-    uint256 hashFinalSaplingRoot;               // only for version 8
+    uint256 hashFinalSaplingRoot;               // only for version 8+
 
     CBlockHeader()
     {
@@ -94,8 +94,7 @@ public:
     std::vector<unsigned char> vchBlockSig;
 
     // memory only
-    mutable CScript payee;
-    mutable bool fChecked;
+    mutable bool fChecked{false};
 
     CBlock()
     {
@@ -105,14 +104,14 @@ public:
     CBlock(const CBlockHeader &header)
     {
         SetNull();
-        *((CBlockHeader*)this) = header;
+        *(static_cast<CBlockHeader*>(this)) = header;
     }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(*(CBlockHeader*)this);
+        READWRITE(*static_cast<CBlockHeader*>(this));
         READWRITE(vtx);
         if(vtx.size() > 1 && vtx[1]->IsCoinStake())
             READWRITE(vchBlockSig);
@@ -123,7 +122,6 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         fChecked = false;
-        payee = CScript();
         vchBlockSig.clear();
     }
 

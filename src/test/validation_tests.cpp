@@ -1,4 +1,4 @@
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -46,12 +46,11 @@ BOOST_AUTO_TEST_CASE(special_tx_validation_test)
     BOOST_CHECK(state.GetRejectReason().find("without extra payload"));
 
     // Size limits
-    mtx.extraPayload = std::vector<uint8_t>(10001, 1);
+    mtx.extraPayload = std::vector<uint8_t>(MAX_SPECIALTX_EXTRAPAYLOAD + 1, 1);
     BOOST_CHECK(!CheckSpecialTx(CTransaction(mtx), state, true));
     BOOST_CHECK(state.GetRejectReason().find("Special tx payload oversize"));
 
-    // Remove two elements, so now it passes the size check
-    mtx.extraPayload->pop_back();
+    // Remove one element, so now it passes the size check
     mtx.extraPayload->pop_back();
     BOOST_CHECK(!CheckSpecialTx(CTransaction(mtx), state, true));
     BOOST_CHECK(state.GetRejectReason().find("with invalid type"));
@@ -66,7 +65,7 @@ void test_simple_sapling_invalidity(CMutableTransaction& tx)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        BOOST_CHECK(!CheckTransaction(newTx, false, false, state, false));
+        BOOST_CHECK(!CheckTransaction(newTx, false, state, false));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
     }
     {
@@ -76,7 +75,7 @@ void test_simple_sapling_invalidity(CMutableTransaction& tx)
         newTx.sapData->vShieldedSpend.emplace_back();
         newTx.sapData->vShieldedSpend[0].nullifier = GetRandHash();
 
-        BOOST_CHECK(!CheckTransaction(newTx, false, false, state, false));
+        BOOST_CHECK(!CheckTransaction(newTx, false, state, false));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
     }
     {
@@ -113,7 +112,7 @@ void test_simple_sapling_invalidity(CMutableTransaction& tx)
 
         newTx.sapData->vShieldedSpend.emplace_back();
 
-        BOOST_CHECK(!CheckTransaction(newTx, false, false, state, false, false, true));
+        BOOST_CHECK(!CheckTransaction(newTx, false, state, false, false, true));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-sapling");
     }
     {
@@ -132,7 +131,7 @@ void test_simple_sapling_invalidity(CMutableTransaction& tx)
 
         newTx.sapData->vShieldedSpend.emplace_back();
 
-        BOOST_CHECK(!CheckTransaction(newTx, false, false, state, false, false, true));
+        BOOST_CHECK(!CheckTransaction(newTx, false, state, false, false, true));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-sapling");
     }
 }

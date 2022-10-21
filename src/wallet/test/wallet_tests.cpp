@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,7 +11,6 @@
 #include "wallet/wallet.h"
 
 #include <set>
-#include <stdint.h>
 #include <utility>
 #include <vector>
 
@@ -24,6 +23,7 @@
 // we repeat those tests this many times and only complain if all iterations of the test fail
 #define RANDOM_REPEATS 5
 
+std::vector<std::unique_ptr<CWalletTx>> wtxn;
 
 typedef std::set<std::pair<const CWalletTx*,unsigned int> > CoinSet;
 
@@ -43,19 +43,19 @@ static void add_coin(const CAmount& nValue, int nAge = 6*24, bool fIsFromMe = fa
         // so stop vin being empty, and cache a non-zero Debit to fake out IsFromMe()
         tx.vin.resize(1);
     }
-    CWalletTx* wtx = new CWalletTx(pwalletMain, tx);
+    std::unique_ptr<CWalletTx> wtx(new CWalletTx(pwalletMain, MakeTransactionRef(std::move(tx))));
     if (fIsFromMe) {
         wtx->m_amounts[CWalletTx::DEBIT].Set(ISMINE_SPENDABLE, 1);
     }
-    COutput output(wtx, nInput, nAge, true, true);
+    COutput output(wtx.get(), nInput, nAge, true, true);
     vCoins.push_back(output);
+    wtxn.emplace_back(std::move(wtx));
 }
 
 static void empty_wallet(void)
 {
-    for (COutput output : vCoins)
-        delete output.tx;
     vCoins.clear();
+    wtxn.clear();
 }
 
 static bool equal_sets(CoinSet a, CoinSet b)
@@ -320,10 +320,10 @@ void removeTxFromMempool(CWalletTx& wtx)
 /**
  * Mimic block creation.
  */
-CBlockIndex* SimpleFakeMine(CWalletTx& wtx, CBlockIndex* pprev = nullptr)
+CBlockIndex* SimpleFakeMine(CWalletTx& wtx, CWallet &wallet, CBlockIndex* pprev = nullptr)
 {
     CBlock block;
-    block.vtx.emplace_back(std::make_shared<const CTransaction>(wtx));
+    block.vtx.emplace_back(wtx.tx);
     block.hashMerkleRoot = BlockMerkleRoot(block);
     if (pprev) block.hashPrevBlock = pprev->GetBlockHash();
     CBlockIndex* fakeIndex = new CBlockIndex(block);
@@ -332,8 +332,10 @@ CBlockIndex* SimpleFakeMine(CWalletTx& wtx, CBlockIndex* pprev = nullptr)
     fakeIndex->phashBlock = &mapBlockIndex.find(block.GetHash())->first;
     chainActive.SetTip(fakeIndex);
     BOOST_CHECK(chainActive.Contains(fakeIndex));
-    wtx.SetMerkleBranch(fakeIndex->GetBlockHash(), 0);
+    WITH_LOCK(wallet.cs_wallet, wallet.SetLastBlockProcessed(fakeIndex));
+    wtx.m_confirm = CWalletTx::Confirmation(CWalletTx::Status::CONFIRMED, fakeIndex->nHeight, fakeIndex->GetBlockHash(), 0);
     removeTxFromMempool(wtx);
+    wtx.fInMempool = false;
     return fakeIndex;
 }
 
@@ -352,8 +354,9 @@ CWalletTx& BuildAndLoadTxToWallet(const std::vector<CTxIn>& vin,
     mTx.vin = vin;
     mTx.vout = vout;
     CTransaction tx(mTx);
-    wallet.LoadToWallet({&wallet, tx});
-    return wallet.mapWallet[tx.GetHash()];
+    CWalletTx wtx(&wallet, MakeTransactionRef(tx));
+    wallet.LoadToWallet(wtx);
+    return wallet.mapWallet.at(tx.GetHash());
 }
 
 CWalletTx& ReceiveBalanceWith(const std::vector<CTxOut>& vout,
@@ -417,6 +420,7 @@ BOOST_AUTO_TEST_CASE(cached_balances_tests)
     LOCK2(cs_main, wallet.cs_wallet);
     wallet.SetMinVersion(FEATURE_PRE_SPLIT_KEYPOOL);
     wallet.SetupSPKM(false);
+    wallet.SetLastBlockProcessed(chainActive.Tip());
 
     // Receive balance from an external source
     CTxDestination receivingAddr;
@@ -435,11 +439,12 @@ BOOST_AUTO_TEST_CASE(cached_balances_tests)
     );
 
     // GetUnconfirmedBalance requires tx in mempool.
-    fakeMempoolInsertion(MakeTransactionRef(wtxCredit));
+    fakeMempoolInsertion(wtxCredit.tx);
+    wtxCredit.fInMempool = true;
     BOOST_CHECK_EQUAL(wallet.GetUnconfirmedBalance(), nCredit);
 
     // 2) Confirm tx and verify
-    SimpleFakeMine(wtxCredit);
+    SimpleFakeMine(wtxCredit, wallet);
     BOOST_CHECK_EQUAL(wallet.GetUnconfirmedBalance(), 0);
     BOOST_CHECK_EQUAL(wtxCredit.GetAvailableCredit(), nCredit);
 

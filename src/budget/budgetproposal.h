@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,6 +15,8 @@ static const CAmount BUDGET_FEE_TX_OLD = (50 * COIN);
 static const CAmount BUDGET_FEE_TX = (5 * COIN);
 static const int64_t BUDGET_VOTE_UPDATE_MIN = 60 * 60;
 
+class CBudgetManager;
+
 //
 // Budget Proposal : Contains the masternode votes for each budget
 //
@@ -22,6 +24,7 @@ static const int64_t BUDGET_VOTE_UPDATE_MIN = 60 * 60;
 class CBudgetProposal
 {
 private:
+    friend class CBudgetManager;
     CAmount nAllotted;
     bool fValid;
     std::string strInvalid;
@@ -34,7 +37,7 @@ private:
     bool CheckAddress();
 
 protected:
-    std::map<uint256, CBudgetVote> mapVotes;
+    std::map<COutPoint, CBudgetVote> mapVotes;
     std::string strProposalName;
     std::string strURL;
     int nBlockStart;
@@ -89,8 +92,6 @@ public:
     CAmount GetAmount() const { return nAmount; }
     void SetAllotted(CAmount nAllottedIn) { nAllotted = nAllottedIn; }
     CAmount GetAllotted() const { return nAllotted; }
-
-    void CleanAndRemove();
 
     uint256 GetHash() const
     {

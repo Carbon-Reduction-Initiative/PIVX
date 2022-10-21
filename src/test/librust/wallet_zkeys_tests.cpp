@@ -1,5 +1,5 @@
 // Copyright (c) 2016-2020 The ZCash developers
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -116,7 +116,13 @@ BOOST_AUTO_TEST_CASE(StoreAndLoadSaplingZkeys) {
     BOOST_CHECK_EQUAL(wallet.GetSaplingScriptPubKeyMan()->mapSaplingZKeyMetadata[ivk2].nCreateTime, now);
 
     // Load a diversified address for the third key into the wallet
+    libzcash::SaplingPaymentAddress defaultAddr2 = sk2.DefaultAddress();
+    diversifier.begin()[0] = 10;
     auto dpa2 = sk2.ToXFVK().Address(diversifier).get().second;
+    while (dpa2 == defaultAddr2 && diversifier.begin()[0] < 255) {
+        diversifier.begin()[0] += 1;
+        dpa2 = sk2.ToXFVK().Address(diversifier).get().second;
+    }
     BOOST_CHECK(wallet.HaveSaplingIncomingViewingKey(sk2.DefaultAddress()));
     BOOST_CHECK(!wallet.HaveSaplingIncomingViewingKey(dpa2));
     BOOST_CHECK(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
@@ -159,7 +165,8 @@ BOOST_AUTO_TEST_CASE(WriteCryptedSaplingZkeyDirectToDb) {
 
     // Create a new wallet from the existing wallet path
     bool fFirstRun;
-    CWallet wallet2(pwalletMain->strWalletFile);
+    std::unique_ptr<CWalletDBWrapper> dbw(new CWalletDBWrapper(&bitdb, pwalletMain->GetDBHandle().GetName()));
+    CWallet wallet2(std::move(dbw));
     BOOST_CHECK_EQUAL(DB_LOAD_OK, wallet2.LoadWallet(fFirstRun));
 
     // Confirm it's not the same as the other wallet

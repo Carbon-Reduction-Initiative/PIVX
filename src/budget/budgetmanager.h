@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -66,6 +66,9 @@ public:
     void AddSeenProposalVote(const CBudgetVote& vote);
     void AddSeenFinalizedBudgetVote(const CFinalizedBudgetVote& vote);
 
+    void RemoveStaleVotesOnProposal(CBudgetProposal* prop);
+    void RemoveStaleVotesOnFinalBudget(CFinalizedBudget* fbud);
+
     // Use const operator std::map::at(), thus existence must be checked before calling.
     CDataStream GetProposalVoteSerialized(const uint256& voteHash) const;
     CDataStream GetProposalSerialized(const uint256& propHash) const;
@@ -88,7 +91,15 @@ public:
     int GetBestHeight() const { return nBestHeight.load(std::memory_order_acquire); }
 
     void ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
+    /// Process the message and returns the ban score (0 if no banning is needed)
+    int ProcessMessageInner(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
     void NewBlock(int height);
+
+    int ProcessBudgetVoteSync(const uint256& nProp, CNode* pfrom);
+    int ProcessProposal(CBudgetProposal& proposal);
+    int ProcessProposalVote(CBudgetVote& proposal, CNode* pfrom);
+    int ProcessFinalizedBudget(CFinalizedBudget& finalbudget, CNode* pfrom);
+    int ProcessFinalizedBudgetVote(CFinalizedBudgetVote& vote, CNode* pfrom);
 
     // functions returning a pointer in the map. Need cs_proposals/cs_budgets locked from the caller
     CBudgetProposal* FindProposal(const uint256& nHash);
@@ -107,7 +118,7 @@ public:
     bool IsBudgetPaymentBlock(int nBlockHeight) const;
     bool IsBudgetPaymentBlock(int nBlockHeight, int& nCountThreshold) const;
     bool AddProposal(CBudgetProposal& budgetProposal);
-    bool AddFinalizedBudget(CFinalizedBudget& finalizedBudget);
+    bool AddFinalizedBudget(CFinalizedBudget& finalizedBudget, CNode* pfrom = nullptr);
     uint256 SubmitFinalBudget();
 
     bool UpdateProposal(const CBudgetVote& vote, CNode* pfrom, std::string& strError);

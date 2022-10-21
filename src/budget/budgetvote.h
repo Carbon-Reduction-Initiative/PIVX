@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -50,7 +50,7 @@ public:
     // override CSignedMessage functions
     uint256 GetSignatureHash() const override { return GetHash(); }
     std::string GetStrMessage() const override;
-    const CTxIn GetVin() const override { return vin; };
+    CTxIn GetVin() const { return vin; };
 
     UniValue ToJSON() const;
 

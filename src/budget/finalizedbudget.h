@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,6 +12,7 @@
 #include "streams.h"
 
 class CTxBudgetPayment;
+class CBudgetManager;
 
 static std::map<uint256, std::pair<uint256,int> > mapPayment_History;   // proposal hash --> (block hash, block height)
 
@@ -29,6 +30,8 @@ enum class TrxValidationStatus {
 class CFinalizedBudget
 {
 private:
+    friend class CBudgetManager;
+
     bool fAutoChecked; //If it matches what we see, we'll auto vote for it (masternode only)
     bool fValid;
     std::string strInvalid;
@@ -40,7 +43,7 @@ private:
     bool CheckName();
 
 protected:
-    std::map<uint256, CFinalizedBudgetVote> mapVotes;
+    std::map<COutPoint, CFinalizedBudgetVote> mapVotes;
     std::string strBudgetName;
     int nBlockStart;
     std::vector<CTxBudgetPayment> vecBudgetPayments;
@@ -54,7 +57,6 @@ public:
     CFinalizedBudget();
     CFinalizedBudget(const std::string& name, int blockstart, const std::vector<CTxBudgetPayment>& vecBudgetPaymentsIn, const uint256& nfeetxhash);
 
-    void CleanAndRemove();
     bool AddOrUpdateVote(const CFinalizedBudgetVote& vote, std::string& strError);
     UniValue GetVotesObject() const;
     void SetSynced(bool synced);    // sets fSynced on votes (true only if valid)
