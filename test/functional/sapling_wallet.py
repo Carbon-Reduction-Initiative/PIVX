@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
-# Copyright (c) 2020 The PIVX developers
+# Copyright (c) 2020 The CARI developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -11,7 +11,6 @@ from test_framework.util import (
     connect_nodes,
     disconnect_nodes,
     satoshi_round,
-    sync_mempools,
     get_coinstake_address,
     wait_until,
 )
@@ -29,7 +28,7 @@ class WalletSaplingTest(PivxTestFramework):
         self.extra_args[0].append('-sporkkey=932HEevBSujW2ud7RfB1YF91AFygbBRQj3de3LyaCRqNzKKgWXi')
 
     def check_tx_priority(self, txids):
-        sync_mempools(self.nodes)
+        self.sync_mempools()
         mempool = self.nodes[0].getrawmempool(True)
         for txid in txids:
             assert(Decimal(mempool[txid]['startingpriority']) == Decimal('1E+25'))

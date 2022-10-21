@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -49,19 +49,21 @@ private Q_SLOTS:
     void handleAddressClicked(const QModelIndex &index);
     void onSortChanged(int idx);
     void onSortOrderChanged(int idx);
+    void filterChanged(const QString& str);
+
 private:
-    Ui::ReceiveWidget *ui;
+    Ui::ReceiveWidget *ui{nullptr};
 
-    FurAbstractListItemDelegate *delegate;
-    AddressTableModel* addressTableModel = nullptr;
-    AddressFilterProxyModel *filter = nullptr;
+    FurAbstractListItemDelegate *delegate{nullptr};
+    AddressTableModel* addressTableModel{nullptr};
+    AddressFilterProxyModel *filter{nullptr};
 
-    QSpacerItem *spacer = nullptr;
+    QSpacerItem *spacer{nullptr};
 
     // Cached last address
-    SendCoinsRecipient *info = nullptr;
+    SendCoinsRecipient *info{nullptr};
     // Cached qr
-    QPixmap *qrImage = nullptr;
+    QPixmap *qrImage{nullptr};
 
     // Cached sort type and order
     AddressTableModel::ColumnIndex sortType = AddressTableModel::Label;
@@ -73,9 +75,9 @@ private:
     void sortAddresses();
     void onTransparentSelected(bool transparentSelected);
 
-    bool isShowingDialog = false;
+    bool isShowingDialog{false};
     // Whether the main section is presenting a shielded address or a regular one
-    bool shieldedMode = false;
+    bool shieldedMode{false};
 
 };
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
-# Copyright (c) 2020 The PIVX developers
+# Copyright (c) 2020 The CARI developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -95,7 +95,7 @@ class ListReceivedTest (PivxTestFramework):
         assert_false(r[0]['change'], "Note should not be change")
         assert_equal(my_memo_hex, r[0]['memo'])
         assert_equal(0, r[0]['confirmations'])
-        assert_equal(-1, r[0]['blockindex'])
+        assert_equal(0, r[0]['blockindex'])
         assert_equal(0, r[0]['blockheight'])
 
         c = self.nodes[1].getsaplingnotescount(0)

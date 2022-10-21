@@ -5,23 +5,22 @@
 """Test the listreceivedbyaddress RPC."""
 from decimal import Decimal
 
-from test_framework.test_framework import CariTestFramework
+from test_framework.test_framework import PivxTestFramework
 from test_framework.util import (
     assert_array_result,
     assert_equal,
     assert_raises_rpc_error,
-    sync_blocks,
 )
 
 
-class ReceivedByTest(CariTestFramework):
+class ReceivedByTest(PivxTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
 
     def run_test(self):
         # Generate block to get out of IBD
         self.nodes[0].generate(1)
-        sync_blocks(self.nodes)
+        self.sync_blocks()
 
         self.log.info("listreceivedbyaddress Test")
 

@@ -28,10 +28,10 @@ def assert_fee_amount(fee, tx_size, fee_per_kB):
     """Assert the fee was in range"""
     target_fee = round(tx_size * fee_per_kB / 1000, 8)
     if fee < target_fee:
-        raise AssertionError("Fee of %s CARI too low! (Should be %s CARI)" % (str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s PIV too low! (Should be %s PIV)" % (str(fee), str(target_fee)))
     # allow the wallet's estimation to be at most 2 bytes off
     if fee > (tx_size + 20) * fee_per_kB / 1000:
-        raise AssertionError("Fee of %s CARI too high! (Should be %s CARI)" % (str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s PIV too high! (Should be %s PIV)" % (str(fee), str(target_fee)))
 
 def assert_equal(thing1, thing2, *args):
     if thing1 != thing2 or any(thing1 != arg for arg in args):
@@ -389,48 +389,6 @@ def connect_nodes_clique(nodes):
         for b in range(a, l):
             connect_nodes(nodes[a], b)
             connect_nodes(nodes[b], a)
-
-def sync_blocks(rpc_connections, *, wait=1, timeout=60):
-    """
-    Wait until everybody has the same tip.
-
-    sync_blocks needs to be called with an rpc_connections set that has least
-    one node already synced to the latest, stable tip, otherwise there's a
-    chance it might return before all nodes are stably synced.
-    """
-    stop_time = time.time() + timeout
-    while time.time() <= stop_time:
-        best_hash = [x.getbestblockhash() for x in rpc_connections]
-        if best_hash.count(best_hash[0]) == len(rpc_connections):
-            return
-        # Check that each peer has at least one connection
-        assert (all([len(x.getpeerinfo()) for x in rpc_connections]))
-        time.sleep(wait)
-    raise AssertionError("Block sync timed out after {}s:{}".format(
-        timeout,
-        "".join("\n  {!r}".format(b) for b in best_hash),
-    ))
-
-def sync_mempools(rpc_connections, *, wait=1, timeout=60, flush_scheduler=True):
-    """
-    Wait until everybody has the same transactions in their memory
-    pools
-    """
-    stop_time = time.time() + timeout
-    while time.time() <= stop_time:
-        pool = [set(r.getrawmempool()) for r in rpc_connections]
-        if pool.count(pool[0]) == len(rpc_connections):
-            #if flush_scheduler:
-            #    for r in rpc_connections:
-            #        r.syncwithvalidationinterfacequeue()
-            return
-        # Check that each peer has at least one connection
-        assert (all([len(x.getpeerinfo()) for x in rpc_connections]))
-        time.sleep(wait)
-    raise AssertionError("Mempool sync timed out after {}s:{}".format(
-        timeout,
-        "".join("\n  {!r}".format(m) for m in pool),
-    ))
 
 # Transaction/Block functions
 #############################
