@@ -58,15 +58,18 @@ BASE_SCRIPTS= [
     # Longest test should go first, to favor running tests in parallel
     'wallet_basic.py',                          # ~ 498 sec
     'wallet_backup.py',                         # ~ 477 sec
+    'wallet_reorgsrestore.py',                  # ~ 391 sec
+    'mempool_persist.py',                       # ~ 417 sec
 
     # vv Tests less than 5m vv
+    'wallet_hd.py',                             # ~ 300 sec
     'wallet_zapwallettxes.py',                  # ~ 300 sec
-    'wallet_hd.py',                             # ~ 280 sec
     'p2p_time_offset.py',                       # ~ 267 sec
     'rpc_fundrawtransaction.py',                # ~ 260 sec
     'mining_pos_coldStaking.py',                # ~ 215 sec
     'wallet_abandonconflict.py',                # ~ 212 sec
     'feature_logging.py',                       # ~ 200 sec
+    'feature_blockindexstats.py',               # ~ 197 sec
     'rpc_rawtransaction.py',                    # ~ 193 sec
     'wallet_keypool_topup.py',                  # ~ 174 sec
     'wallet_txn_doublespend.py --mineblock',    # ~ 157 sec
@@ -94,6 +97,7 @@ BASE_SCRIPTS= [
     'rpc_net.py',                               # ~ 83 sec
     'rpc_bip38.py',                             # ~ 82 sec
     #'rpc_deprecated.py',                        # ~ 80 sec (disabled for now, no deprecated RPC commands to test)
+    'interface_zmq.py',                         # ~ 95 sec
     'interface_bitcoin_cli.py',                 # ~ 80 sec
     'mempool_packages.py',                      # ~ 63 sec
 
@@ -108,6 +112,7 @@ BASE_SCRIPTS= [
     'rpc_blockchain.py',                        # ~ 50 sec
     'wallet_disable.py',                        # ~ 50 sec
     'mining_v5_upgrade.py',                     # ~ 48 sec
+    'p2p_mempool.py',                           # ~ 46 sec
     'feature_help.py',                          # ~ 30 sec
 
     # Don't append tests at the end to avoid merge conflicts
@@ -115,11 +120,8 @@ BASE_SCRIPTS= [
     # 'feature_block.py',
     # 'wallet_importmulti.py',
     # 'mempool_limit.py', # We currently don't limit our mempool_reorg
-    # 'interface_zmq.py',
     # 'rpc_getchaintips.py',
-    # 'mempool_persist.py',
     # 'rpc_users.py',
-    # 'p2p_mempool.py',
     # 'mining_prioritisetransaction.py',
     # 'p2p_invalid_block.py',
     # 'p2p_invalid_tx.py',
@@ -139,8 +141,10 @@ BASE_SCRIPTS= [
 TIERTWO_SCRIPTS = [
     # Longest test should go first, to favor running tests in parallel
     'tiertwo_governance_sync_basic.py',
+    'tiertwo_governance_reorg.py',              # ~ 361 sec
     'tiertwo_masternode_activation.py',
     'tiertwo_masternode_ping.py',
+    'tiertwo_governance_invalid_budget.py',
 ]
 
 SAPLING_SCRIPTS = [
@@ -161,6 +165,7 @@ EXTENDED_SCRIPTS = [
     # These tests are not run by the travis build process.
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 20m vv
+    'feature_dbcrash.py',
     'sapling_fillblock.py',                     # ~ 780 sec
     'feature_fee_estimation.py',                # ~ 360 sec
     # vv Tests less than 5m vv
@@ -177,6 +182,7 @@ EXTENDED_SCRIPTS = [
 
 LEGACY_SKIP_TESTS = [
     # These tests are not run when the flag --legacywallet is used
+    'feature_blockindexstats.py',
     'feature_help.py',
     'feature_logging.py',
     'feature_reindex.py',
@@ -210,8 +216,8 @@ LEGACY_SKIP_TESTS = [
     'sapling_mempool.py',
 ]
 
-# Place EXTENDED_SCRIPTS first since it has the 3 longest running tests
-ALL_SCRIPTS = EXTENDED_SCRIPTS + BASE_SCRIPTS + TIERTWO_SCRIPTS + SAPLING_SCRIPTS
+# Place the lists with the longest tests (on average) first
+ALL_SCRIPTS = EXTENDED_SCRIPTS + TIERTWO_SCRIPTS + SAPLING_SCRIPTS + BASE_SCRIPTS
 
 NON_SCRIPTS = [
     # These are python files that live in the functional tests directory, but are not test scripts.
@@ -360,7 +366,7 @@ def main():
 # - "keep"    : Check if the cache in the directory is valid. Recreate only if invalid.
 # - "skip"    : Don' check the contents of the cache and don't create a new one
 def run_tests(test_list, src_dir, build_dir, exeext, tmpdir, jobs=1, enable_coverage=False, args=[], combined_logs_len=0, keep_cache="rewrite"):
-    # Warn if pivxd is already running (unix only)
+    # Warn if carid is already running (unix only)
     try:
         if subprocess.check_output(["pidof", "carid"]) is not None:
             print("%sWARNING!%s There is already a carid process running on this system. Tests may fail unexpectedly due to resource contention!" % (BOLD[1], BOLD[0]))

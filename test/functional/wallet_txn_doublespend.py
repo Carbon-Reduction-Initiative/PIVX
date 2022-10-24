@@ -23,7 +23,7 @@ class TxnMallTest(CariTestFramework):
         disconnect_nodes(self.nodes[2], 1)
 
     def run_test(self):
-        # All nodes should start with 6,250 CARI:
+        # All nodes should start with 6,250 PIV:
         starting_balance = 6250
         for i in range(4):
             assert_equal(self.nodes[i].getbalance(), starting_balance)
@@ -44,7 +44,7 @@ class TxnMallTest(CariTestFramework):
         # Coins are sent to node1_address
         node1_address = self.nodes[1].getnewaddress()
 
-        # First: use raw transaction API to send 1240 * 5 CARI to node1_address,
+        # First: use raw transaction API to send 1240 * 5 PIV to node1_address,
         # but don't broadcast:
         doublespend_fee = Decimal('-.02')
         rawtx_input_0 = {}
@@ -69,7 +69,7 @@ class TxnMallTest(CariTestFramework):
         # Have node0 mine a block:
         if (self.options.mine_block):
             self.nodes[0].generate(1)
-            sync_blocks(self.nodes[0:2])
+            self.sync_blocks(self.nodes[0:2])
 
         tx1 = self.nodes[0].gettransaction(txid1)
         tx2 = self.nodes[0].gettransaction(txid2)
@@ -105,7 +105,7 @@ class TxnMallTest(CariTestFramework):
         connect_nodes(self.nodes[2], 0)
         connect_nodes(self.nodes[2], 1)
         self.nodes[2].generate(1)  # Mine another block to make sure we sync
-        sync_blocks(self.nodes)
+        self.sync_blocks()
         assert_equal(self.nodes[0].gettransaction(doublespend_txid)["confirmations"], 2)
 
         # Re-fetch transaction info:
