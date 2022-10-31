@@ -1,4 +1,4 @@
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -177,12 +177,11 @@ OperationResult SaplingOperation::build()
         if (!opTx) {
             return errorOut("Failed to build transaction: " + txResult.GetError());
         }
-        finalTx = *opTx;
 
         // Now check fee
-        bool isShielded = finalTx.IsShieldedTx();
-        const CAmount& nFeeNeeded = isShielded ? GetShieldedTxMinFee(finalTx) :
-                                                 GetMinRelayFee(finalTx.GetTotalSize(), false);
+        bool isShielded = opTx->IsShieldedTx();
+        const CAmount& nFeeNeeded = isShielded ? GetShieldedTxMinFee(*opTx) :
+                                                 GetMinRelayFee(opTx->GetTotalSize(), false);
         if (nFeeNeeded <= nFeeRet) {
             // Check that the fee is not too high.
             CAmount nMaxFee = nFeeNeeded * (isShielded ? 100 : 10000);
@@ -222,19 +221,18 @@ OperationResult SaplingOperation::build()
     if (!opTx) {
         return errorOut("Failed to build transaction: " + txResult.GetError());
     }
-    finalTx = *opTx;
+    finalTx = MakeTransactionRef(*opTx);
     return OperationResult(true);
 }
 
 OperationResult SaplingOperation::send(std::string& retTxHash)
 {
-    CWalletTx wtx(pwalletMain, finalTx);
-    const CWallet::CommitResult& res = pwalletMain->CommitTransaction(wtx, tkeyChange, g_connman.get());
+    const CWallet::CommitResult& res = pwalletMain->CommitTransaction(finalTx, tkeyChange, g_connman.get());
     if (res.status != CWallet::CommitStatus::OK) {
         return errorOut(res.ToString());
     }
 
-    retTxHash = finalTx.GetHash().ToString();
+    retTxHash = finalTx->GetHash().ToString();
     return OperationResult(true);
 }
 
@@ -275,7 +273,7 @@ OperationResult SaplingOperation::loadUtxos(TxValues& txValues)
         for (const auto& outpoint : vCoins) {
             const auto* tx = pwalletMain->GetWalletTx(outpoint.outPoint.hash);
             if (!tx) continue;
-            nSelectedValue += tx->vout[outpoint.outPoint.n].nValue;
+            nSelectedValue += tx->tx->vout[outpoint.outPoint.n].nValue;
             selectedUTXOInputs.emplace_back(tx, outpoint.outPoint.n, 0, true, true);
         }
         return loadUtxos(txValues, selectedUTXOInputs, nSelectedValue);
@@ -309,7 +307,7 @@ OperationResult SaplingOperation::loadUtxos(TxValues& txValues)
     CAmount selectedUTXOAmount = 0;
     std::vector<COutput> selectedTInputs;
     for (const COutput& t : transInputs) {
-        const auto& outPoint = t.tx->vout[t.i];
+        const auto& outPoint = t.tx->tx->vout[t.i];
         selectedUTXOAmount += outPoint.nValue;
         selectedTInputs.emplace_back(t);
         if (selectedUTXOAmount >= txValues.target) {
@@ -343,7 +341,7 @@ OperationResult SaplingOperation::loadUtxos(TxValues& txValues, const std::vecto
 
     // update the transaction with these inputs
     for (const auto& t : transInputs) {
-        const auto& outPoint = t.tx->vout[t.i];
+        const auto& outPoint = t.tx->tx->vout[t.i];
         txBuilder.AddTransparentInput(COutPoint(t.tx->GetHash(), t.i), outPoint.scriptPubKey, outPoint.nValue);
     }
     return OperationResult(true);
@@ -379,7 +377,7 @@ static CacheCheckResult CheckCachedNote(const SaplingNoteEntry& t, const libzcas
         if (sspkm->IsSaplingSpent(*(nd.nullifier))) {
             LogPrintf("Removed note %s as it appears to be already spent.\n", noteStr);
             prevTx.MarkDirty();
-            CWalletDB(pwalletMain->strWalletFile, "r+").WriteTx(prevTx);
+            CWalletDB(pwalletMain->GetDBHandle(), "r+").WriteTx(prevTx);
             pwalletMain->NotifyTransactionChanged(pwalletMain, t.op.hash, CT_UPDATED);
             return CacheCheckResult::SPENT;
         }
