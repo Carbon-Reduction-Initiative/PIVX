@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,6 +20,7 @@
 #include "openuridialog.h"
 
 #define REQUEST_PREPARE_TX 1
+#define REQUEST_REFRESH_BALANCE 2
 
 SendWidget::SendWidget(CARIGUI* parent) :
     PWidget(parent),
@@ -91,6 +92,7 @@ SendWidget::SendWidget(CARIGUI* parent) :
     setCssProperty(ui->coinWidget, "container-coin-type");
     setCssProperty(ui->labelLine, "container-divider");
 
+
     // Total Send
     setCssProperty(ui->labelTitleTotalSend, "text-title");
     setCssProperty(ui->labelAmountSend, "text-body1");
@@ -142,9 +144,10 @@ void SendWidget::refreshAmounts()
     }
 
     nDisplayUnit = walletModel->getOptionsModel()->getDisplayUnit();
-    ui->labelAmountSend->setText(GUIUtil::formatBalance(total, nDisplayUnit, false));
 
     CAmount totalAmount = 0;
+    CAmount delegatedBalance = 0;
+    QString titleTotalRemaining;
     if (coinControlDialog->coinControl->HasSelected()) {
         // Set remaining balance to the sum of the coinControl selected inputs
         std::vector<OutPointWrapper> coins;
@@ -154,23 +157,41 @@ void SendWidget::refreshAmounts()
             selectedBalance += coin.value;
         }
         totalAmount = selectedBalance - total;
-        ui->labelTitleTotalRemaining->setText(tr("Total remaining from the selected UTXO"));
+        titleTotalRemaining = tr("Total remaining from the selected UTXO");
     } else {
-        // Wallet's unlocked balance.
-        totalAmount = isTransparent ? (walletModel->getUnlockedBalance(nullptr, fDelegationsChecked, false) - total)
-                                    : (walletModel->GetWalletBalances().shielded_balance - total);
-        ui->labelTitleTotalRemaining->setText(tr("Unlocked remaining"));
+        interfaces::WalletBalances balances = walletModel->GetWalletBalances();
+        if (isTransparent) {
+            totalAmount = balances.balance - balances.shielded_balance - walletModel->getLockedBalance() - total;
+            if (!fDelegationsChecked) {
+                totalAmount -= balances.delegate_balance;
+            }
+            // show delegated balance if exist
+            delegatedBalance = balances.delegate_balance;
+        } else {
+            totalAmount = balances.shielded_balance - total;
+        }
+        titleTotalRemaining = tr("Unlocked remaining");
     }
+
     QString type = isTransparent ? "transparent" : "shielded";
-    ui->labelAmountRemaining->setText(
-            GUIUtil::formatBalance(
-                    totalAmount,
-                    nDisplayUnit,
-                    false) + " " + type
-    );
-    ui->checkBoxPoWAlternative->setToolTip(tr("I hereby certify that this transaction replaces one performed on<br>the Bitcoin proof-of-work network not a transaction in the traditional<br>banking or any alternative transfer system"));
+    QString labelAmountRemaining = GUIUtil::formatBalance( totalAmount, nDisplayUnit, false) + " " + type;
+    QMetaObject::invokeMethod(this, "updateAmounts", Qt::QueuedConnection,
+                              Q_ARG(QString, titleTotalRemaining),
+                              Q_ARG(QString, GUIUtil::formatBalance(total, nDisplayUnit, false)),
+                              Q_ARG(QString, labelAmountRemaining),
+                              Q_ARG(CAmount, delegatedBalance));
+}
+
+void SendWidget::updateAmounts(const QString& _titleTotalRemaining,
+                               const QString& _labelAmountSend,
+                               const QString& _labelAmountRemaining,
+                               CAmount _delegationBalance)
+{
+    ui->labelTitleTotalRemaining->setText(_titleTotalRemaining);
+    ui->labelAmountSend->setText(_labelAmountSend);
+    ui->labelAmountRemaining->setText(_labelAmountRemaining);
     // show or hide delegations checkbox if need be
-    showHideCheckBoxDelegations();
+    showHideCheckBoxDelegations(_delegationBalance);
 }
 
 void SendWidget::loadClientModel()
@@ -185,7 +206,6 @@ void SendWidget::loadClientModel()
 void SendWidget::loadWalletModel()
 {
     if (walletModel) {
-        coinControlDialog->setModel(walletModel);
         if (walletModel->getOptionsModel()) {
             // display unit
             nDisplayUnit = walletModel->getOptionsModel()->getDisplayUnit();
@@ -204,9 +224,6 @@ void SendWidget::loadWalletModel()
             setCustomFeeSelected(true, nCustomFee);
         }
 
-        // Refresh
-        refreshAmounts();
-
         // TODO: This only happen when the coin control features are modified in other screen, check before do this if the wallet has another screen modifying it.
         // Coin Control
         //connect(walletModel->getOptionsModel(), &OptionsModel::coinControlFeaturesChanged, [this](){});
@@ -215,12 +232,20 @@ void SendWidget::loadWalletModel()
     }
 }
 
+void SendWidget::hideContactsMenu()
+{
+    if (menuContacts && menuContacts->isVisible()) {
+        menuContacts->hide();
+    }
+}
+
 void SendWidget::clearAll(bool fClearSettings)
 {
     onResetCustomOptions(false);
     if (fClearSettings) onResetSettings();
+    hideContactsMenu();
     clearEntries();
-    refreshAmounts();
+    tryRefreshAmounts();
 }
 
 void SendWidget::onResetSettings()
@@ -236,19 +261,19 @@ void SendWidget::onResetCustomOptions(bool fRefreshAmounts)
     if (ui->checkBoxDelegations->isChecked()) ui->checkBoxDelegations->setChecked(false);
     resetCoinControl();
     if (fRefreshAmounts) {
-        refreshAmounts();
+        tryRefreshAmounts();
     }
 }
 
 void SendWidget::resetCoinControl()
 {
-    coinControlDialog->coinControl->SetNull();
+    if (coinControlDialog) coinControlDialog->coinControl->SetNull();
     ui->btnCoinControl->setActive(false);
 }
 
 void SendWidget::resetChangeAddress()
 {
-    coinControlDialog->coinControl->destChange = CNoDestination();
+    if (coinControlDialog) coinControlDialog->coinControl->destChange = CNoDestination();
     ui->btnChangeAddress->setActive(false);
     ui->btnChangeAddress->setVisible(isTransparent);
 }
@@ -319,13 +344,7 @@ void SendWidget::showEvent(QShowEvent *event)
 {
     // Set focus on last recipient address when Send-window is displayed
     setFocusOnLastEntry();
-
-    // Update cached delegated balance
-    CAmount cachedDelegatedBalance_new = walletModel->getDelegatedBalance();
-    if (cachedDelegatedBalance != cachedDelegatedBalance_new) {
-        cachedDelegatedBalance = cachedDelegatedBalance_new;
-        refreshAmounts();
-    }
+    tryRefreshAmounts();
 }
 
 void SendWidget::setFocusOnLastEntry()
@@ -333,19 +352,19 @@ void SendWidget::setFocusOnLastEntry()
     if (!entries.isEmpty()) entries.last()->setFocus();
 }
 
-void SendWidget::showHideCheckBoxDelegations()
+void SendWidget::showHideCheckBoxDelegations(CAmount delegationBalance)
 {
     // Show checkbox only when there is any available owned delegation and
     // coincontrol is not selected, and we are trying to spend transparent PIVs.
-    const bool isCControl = coinControlDialog->coinControl->HasSelected();
-    const bool hasDel = cachedDelegatedBalance > 0;
+    const bool isCControl = coinControlDialog ? coinControlDialog->coinControl->HasSelected() : false;
+    const bool hasDel = delegationBalance > 0;
 
     const bool showCheckBox = isTransparent && !isCControl && hasDel;
     ui->checkBoxDelegations->setVisible(showCheckBox);
     if (showCheckBox)
         ui->checkBoxDelegations->setToolTip(
                 tr("Possibly spend coins delegated for cold-staking (currently available: %1").arg(
-                        GUIUtil::formatBalance(cachedDelegatedBalance, nDisplayUnit, false))
+                        GUIUtil::formatBalance(delegationBalance, nDisplayUnit, false))
         );
 }
 
@@ -465,7 +484,9 @@ OperationResult SendWidget::prepareTransparent(WalletModelTransaction* currentTr
     if (!walletModel) return errorOut("Error, no wallet model loaded");
     // prepare transaction for getting txFee earlier
     WalletModel::SendCoinsReturn prepareStatus;
-    prepareStatus = walletModel->prepareTransaction(currentTransaction, coinControlDialog->coinControl, fDelegationsChecked);
+    prepareStatus = walletModel->prepareTransaction(currentTransaction,
+                                                    coinControlDialog ? coinControlDialog->coinControl : nullptr,
+                                                    fDelegationsChecked);
 
     // process prepareStatus and on error generate message shown to user
     CClientUIInterface::MessageBoxFlags informType;
@@ -492,7 +513,7 @@ OperationResult SendWidget::prepareTransparent(WalletModelTransaction* currentTr
 bool SendWidget::sendFinalStep()
 {
     showHideOp(true);
-    const bool fStakeDelegationVoided = ptrModelTx->getTransaction()->fStakeDelegationVoided;
+    const bool fStakeDelegationVoided = ptrModelTx->fIsStakeDelegationVoided;
     QString warningStr = QString();
     if (fStakeDelegationVoided)
         warningStr = tr("WARNING:\nTransaction spends a cold-stake delegation, voiding it.\n"
@@ -514,9 +535,6 @@ bool SendWidget::sendFinalStep()
         );
 
         if (sendStatus.status == WalletModel::OK) {
-            // if delegations were spent, update cachedBalance
-            if (fStakeDelegationVoided)
-                cachedDelegatedBalance = walletModel->getDelegatedBalance();
             clearAll(false);
             inform(tr("Transaction sent"));
             dialog->deleteLater();
@@ -530,8 +548,8 @@ bool SendWidget::sendFinalStep()
 
 void SendWidget::run(int type)
 {
-    assert(!processingResult);
     if (type == REQUEST_PREPARE_TX) {
+        assert(!processingResult);
         if (!isProcessing) {
             isProcessing = true;
             OperationResult result(false);
@@ -546,6 +564,12 @@ void SendWidget::run(int type)
             }
             isProcessing = false;
         }
+    } else if (type == REQUEST_REFRESH_BALANCE) {
+        if (!isUpdatingBalance) {
+            isUpdatingBalance = true;
+            refreshAmounts();
+            isUpdatingBalance = false;
+        }
     }
 }
 
@@ -555,9 +579,16 @@ void SendWidget::onError(QString error, int type)
     processingResultError = error;
 }
 
-void SendWidget::updateEntryLabels(QList<SendCoinsRecipient> recipients)
+void SendWidget::tryRefreshAmounts()
 {
-    for (SendCoinsRecipient rec : recipients) {
+    if (!execute(REQUEST_REFRESH_BALANCE)) {
+        inform(tr("Processing full, refreshing amounts later"));
+    }
+}
+
+void SendWidget::updateEntryLabels(const QList<SendCoinsRecipient>& recipients)
+{
+    for (const SendCoinsRecipient& rec : recipients) {
         QString label = rec.label;
         if (!label.isNull()) {
             QString labelOld = walletModel->getAddressTableModel()->labelForAddress(rec.address);
@@ -657,12 +688,14 @@ void SendWidget::onChangeCustomFeeClicked()
 void SendWidget::onCoinControlClicked()
 {
     if (walletModel->getBalance() > 0) {
+        // future: move coin control initialization and refresh to a worker thread.
+        if (!coinControlDialog->hasModel()) coinControlDialog->setModel(walletModel);
         coinControlDialog->setSelectionType(isTransparent);
         coinControlDialog->refreshDialog();
         setCoinControlPayAmounts();
         coinControlDialog->exec();
         ui->btnCoinControl->setActive(coinControlDialog->coinControl->HasSelected());
-        refreshAmounts();
+        tryRefreshAmounts();
     } else {
         inform(tr("You don't have any %1 to select.").arg(CURRENCY_UNIT.c_str()));
     }
@@ -677,7 +710,7 @@ void SendWidget::onShieldCoinsClicked()
 
     auto balances = walletModel->GetWalletBalances();
     CAmount availableBalance = balances.balance - balances.shielded_balance - walletModel->getLockedBalance();
-    if (walletModel && availableBalance > 0) {
+    if (availableBalance > 0) {
 
         // Calculate the required fee first. TODO future: Unify this code with the code in coincontroldialog into the model.
         std::map<WalletModel::ListCoinsKey, std::vector<WalletModel::ListCoinsValue>> mapCoins;
@@ -745,7 +778,7 @@ void SendWidget::setCoinControlPayAmounts()
 
 void SendWidget::onValueChanged()
 {
-    refreshAmounts();
+    tryRefreshAmounts();
 }
 
 void SendWidget::onCheckBoxChanged()
@@ -753,10 +786,8 @@ void SendWidget::onCheckBoxChanged()
     const bool checked = ui->checkBoxDelegations->isChecked();
     if (checked != fDelegationsChecked) {
         fDelegationsChecked = checked;
-        refreshAmounts();
+        tryRefreshAmounts();
     }
-
-    fPoWAlternative = ui->checkBoxPoWAlternative->isChecked();
 }
 
 void SendWidget::onPIVSelected(bool _isTransparent)
@@ -771,7 +802,7 @@ void SendWidget::onPIVSelected(bool _isTransparent)
 
     resetChangeAddress();
     resetCoinControl();
-    refreshAmounts();
+    tryRefreshAmounts();
     updateStyle(coinIcon);
 }
 
@@ -941,7 +972,7 @@ void SendWidget::onDeleteClicked()
         focusedEntry = nullptr;
 
         // Update total amounts
-        refreshAmounts();
+        tryRefreshAmounts();
         setFocusOnLastEntry();
     }
 }
