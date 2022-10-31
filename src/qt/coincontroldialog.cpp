@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,8 +19,6 @@
 #include "walletmodel.h"
 
 #include "qt/cari/qtutils.h"
-
-#include <boost/assign/list_of.hpp> // for 'map_list_of()'
 
 #include <QApplication>
 #include <QCheckBox>
@@ -189,7 +187,7 @@ CoinControlDialog::CoinControlDialog(QWidget* parent, bool _forDelegation) : QDi
         ui->treeWidget->setRootIsDecorated(false);
     }
     if (settings.contains("nCoinControlSortColumn") && settings.contains("nCoinControlSortOrder"))
-        sortView(settings.value("nCoinControlSortColumn").toInt(), ((Qt::SortOrder)settings.value("nCoinControlSortOrder").toInt()));
+        sortView(settings.value("nCoinControlSortColumn").toInt(), (static_cast<Qt::SortOrder>(settings.value("nCoinControlSortOrder").toInt())));
 }
 
 CoinControlDialog::~CoinControlDialog()
@@ -688,7 +686,7 @@ void CoinControlDialog::loadAvailableCoin(bool treeMode,
     itemOutput->setFlags(flgCheckbox);
     itemOutput->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
 
-    // if listMode or change => show PIVX address. In tree mode, address is not shown again for direct wallet address outputs
+    // if listMode or change => show CARI address. In tree mode, address is not shown again for direct wallet address outputs
     if (!treeMode) {
         itemOutput->setText(COLUMN_ADDRESS, sWalletAddress);
     }else {

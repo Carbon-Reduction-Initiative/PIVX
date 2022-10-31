@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,12 +27,16 @@
 #include "qt/cari/settings/settingsfaqwidget.h"
 #include "qt/rpcconsole.h"
 
+namespace interfaces {
+    class Handler;
+}
 
 class ClientModel;
 class NetworkStyle;
 class Notificator;
 class WalletModel;
 class MasternodeList;
+
 
 /**
   CARI GUI main class. This class represents the main window of the CARI UI. It communicates with both the client and
@@ -115,6 +119,9 @@ protected:
      */
 
 private:
+    // Handlers
+    std::unique_ptr<interfaces::Handler> m_handler_message_box;
+
     bool enableWallet;
     ClientModel* clientModel = nullptr;
 
@@ -134,7 +141,7 @@ private:
     MasterNodesWidget *masterNodesWidget = nullptr;
     MasternodeList *masternodeListWidget = nullptr;
     ColdStakingWidget *coldStakingWidget = nullptr;
-    SettingsWidget* settingsWidget = nullptr;
+    SettingsWidget* settingsWidget = nullptr; 
 
     SnackBar *snackBar = nullptr;
 

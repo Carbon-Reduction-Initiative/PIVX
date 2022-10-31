@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -212,7 +212,7 @@ bool MasterNodeWizardDialog::createMN()
         SendCoinsRecipient sendCoinsRecipient(
                 QString::fromStdString(dest.ToString()),
                 QString::fromStdString(alias),
-                CAmount(GetCollateral()) * COIN,
+                CAmount(10000) * COIN,
                 "");
 
         // Send the 10 tx to one of your address
@@ -257,12 +257,12 @@ bool MasterNodeWizardDialog::createMN()
         }
 
         // look for the tx index of the collateral
-        CWalletTx* walletTx = currentTransaction.getTransaction();
+        CTransactionRef walletTx = currentTransaction.getTransaction();
         std::string txID = walletTx->GetHash().GetHex();
         int indexOut = -1;
         for (int i=0; i < (int)walletTx->vout.size(); i++) {
-            CTxOut& out = walletTx->vout[i];
-            if (out.nValue == GetCollateral() * COIN) {
+            const CTxOut& out = walletTx->vout[i];
+            if (out.nValue == MN_COLL_AMT) {
                 indexOut = i;
                 break;
             }

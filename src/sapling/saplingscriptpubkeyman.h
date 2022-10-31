@@ -1,4 +1,4 @@
-// Copyright (c) 2020 The PIVX Core developers
+// Copyright (c) 2020 The CARI Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -72,7 +72,7 @@ public:
      * Block height corresponding to the most current witness.
      *
      * When we first create a SaplingNoteData in SaplingScriptPubKeyMan::FindMySaplingNotes, this is set to
-     * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
+     * -1 as a placeholder. The next time CWallet::BlockConnected/CWallet::BlockDisconnected is called, we can
      * determine what height the witness cache for this note is valid for (even
      * if no witnesses were cached), and so can set the correct value in
      * SaplingScriptPubKeyMan::IncrementNoteWitnesses and SaplingScriptPubKeyMan::DecrementNoteWitnesses.
@@ -163,9 +163,9 @@ public:
                                 const CBlock* pblock,
                                 SaplingMerkleTree& saplingTree);
     /**
-     * pindex is the old tip being disconnected.
+     * nChainHeight is the old tip height being disconnected.
      */
-    void DecrementNoteWitnesses(const CBlockIndex* pindex);
+    void DecrementNoteWitnesses(int nChainHeight);
 
     /**
      * Update mapSaplingNullifiersToNotes
@@ -300,6 +300,7 @@ public:
 
     //! Return the address from where the shielded spend is taking the funds from (if possible)
     Optional<libzcash::SaplingPaymentAddress> GetAddressFromInputIfPossible(const CWalletTx* wtx, int index) const;
+    Optional<libzcash::SaplingPaymentAddress> GetAddressFromInputIfPossible(const uint256& txHash, int index) const;
 
     //! Whether the nullifier is from this wallet
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;

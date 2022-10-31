@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 The PIVX developers
+// Copyright (c) 2019-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -244,7 +244,7 @@ void MasterNodesWidget::updateModelAndInform(QString informText)
     inform(informText);
 }
 
-bool MasterNodesWidget::startMN(CMasternodeConfig::CMasternodeEntry mne, std::string& strError)
+bool MasterNodesWidget::startMN(const CMasternodeConfig::CMasternodeEntry& mne, std::string& strError)
 {
     CMasternodeBroadcast mnb;
     if (!CMasternodeBroadcast::Create(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strError, mnb))
@@ -476,8 +476,8 @@ void MasterNodesWidget::onCreateMNClicked()
         return;
     }
 
-    if (walletModel->getBalance() <= (COIN * GetCollateral())) {
-        inform(tr("Not enough balance to create a masternode, 1,000 %1 required.").arg(CURRENCY_UNIT.c_str()));
+    if (walletModel->getBalance() <= (COIN * 10000)) {
+        inform(tr("Not enough balance to create a masternode, 10,000 %1 required.").arg(CURRENCY_UNIT.c_str()));
         return;
     }
     showHideOp(true);
