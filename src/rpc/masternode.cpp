@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -162,7 +162,6 @@ UniValue listmasternodes(const JSONRPCRequest& request)
 
         obj.pushKV("rank", (strStatus == "ENABLED" ? pos : 0));
         obj.pushKV("network", strNetwork);
-        obj.pushKV("ipaddress", strHost);
         obj.pushKV("txhash", strTxHash);
         obj.pushKV("outidx", (uint64_t)oIdx);
         obj.pushKV("pubkey", HexStr(mn.pubKeyMasternode));
@@ -204,10 +203,10 @@ UniValue getmasternodecount (const JSONRPCRequest& request)
     int nCount = 0;
     int ipv4 = 0, ipv6 = 0, onion = 0;
 
-    int nChainHeight = WITH_LOCK(cs_main, return chainActive.Height());
-    if (nChainHeight < 0) return "unknown";
+    const CBlockIndex* pChainTip = GetChainTip();
+    if (!pChainTip) return "unknown";
 
-    mnodeman.GetNextMasternodeInQueueForPayment(nChainHeight, true, nCount);
+    mnodeman.GetNextMasternodeInQueueForPayment(pChainTip->nHeight, true, nCount, pChainTip);
     int total = mnodeman.CountNetworks(ipv4, ipv6, onion);
 
     obj.pushKV("total", total);
@@ -240,9 +239,11 @@ UniValue masternodecurrent (const JSONRPCRequest& request)
             "\nExamples:\n" +
             HelpExampleCli("masternodecurrent", "") + HelpExampleRpc("masternodecurrent", ""));
 
-    const int nHeight = WITH_LOCK(cs_main, return chainActive.Height() + 1);
+    const CBlockIndex* pChainTip = GetChainTip();
+    if (!pChainTip) return "unknown";
+
     int nCount = 0;
-    const CMasternode* winner = mnodeman.GetNextMasternodeInQueueForPayment(nHeight, true, nCount);
+    const CMasternode* winner = mnodeman.GetNextMasternodeInQueueForPayment(pChainTip->nHeight + 1, true, nCount, pChainTip);
     if (winner) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("protocol", (int64_t)winner->protocolVersion);
@@ -493,7 +494,7 @@ UniValue getmasternodeoutputs (const JSONRPCRequest& request)
     // Find possible candidates
     CWallet::AvailableCoinsFilter coinsFilter;
     coinsFilter.fIncludeDelegated = false;
-    coinsFilter.nCoinType = ONLY_COLLATERAL;
+    coinsFilter.nCoinType = ONLY_10000;
     std::vector<COutput> possibleCoins;
     pwalletMain->AvailableCoins(&possibleCoins, nullptr, coinsFilter);
 
@@ -927,7 +928,7 @@ UniValue decodemasternodebroadcast(const JSONRPCRequest& request)
     lastPingObj.pushKV("vin", mnb.lastPing.vin.prevout.ToString());
     lastPingObj.pushKV("blockhash", mnb.lastPing.blockHash.ToString());
     lastPingObj.pushKV("sigtime", mnb.lastPing.sigTime);
-    lastPingObj.pushKV("sigvalid", mnb.lastPing.CheckSignature(mnb.pubKeyMasternode) ? "true" : "false");
+    lastPingObj.pushKV("sigvalid", mnb.lastPing.CheckSignature(mnb.pubKeyMasternode.GetID()) ? "true" : "false");
     lastPingObj.pushKV("vchsig", mnb.lastPing.GetSignatureBase64());
     lastPingObj.pushKV("nMessVersion", mnb.lastPing.nMessVersion);
 

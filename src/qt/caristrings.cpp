@@ -9,14 +9,11 @@
 #define UNUSED
 #endif
 static const char UNUSED *cari_strings[] = {
-QT_TRANSLATE_NOOP("cari-core", " mints deleted\n"),
-QT_TRANSLATE_NOOP("cari-core", " mints updated, "),
-QT_TRANSLATE_NOOP("cari-core", " unconfirmed transactions removed\n"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"(1 = keep tx meta data e.g. account owner and payment request information, 2 "
-"= drop tx meta data)"),
+"(1 = keep tx meta data e.g. payment request information, 2 = drop tx meta "
+"data)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Accept connections from outside (default: 1 if no -proxy or -connect/-"
+"Accept connections from outside (default: %u if no -proxy or -connect/-"
 "noconnect)"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Allow JSON-RPC connections from specified source. Valid for <ip> are a "
@@ -33,8 +30,15 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "notation for IPv6. This option can be specified multiple times (default: "
 "bind to all interfaces)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Cannot obtain a lock on data directory %s. CARI Core is probably already "
-"running."),
+"Cannot find the Sapling parameters in the following directory:\n"
+"%s\n"
+"Please run 'sapling-fetch-params' or './util/fetch-params.sh' and then "
+"restart."),
+QT_TRANSLATE_NOOP("cari-core", ""
+"Cannot obtain a lock on data directory %s. %s is probably already running."),
+QT_TRANSLATE_NOOP("cari-core", ""
+"Cannot upgrade to Sapling wallet (already running Sapling support). Version: "
+"%d"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Change automatic finalized budget voting behavior. mode=auto: Vote for only "
 "exact finalized budget match to my generated budget. (string, default: auto)"),
@@ -51,11 +55,8 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "Delete all wallet transactions and only recover those parts of the "
 "blockchain through -rescan on startup"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Delete all zerocoin spends and mints that have been recorded to the "
-"blockchain database and reindex them (0-1, default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", ""
-"Disable all CARI specific functionality (Masternodes, Zerocoin, SwiftX, "
-"Budgeting) (0-1, default: %u)"),
+"Disable all CARI specific functionality (Masternodes, Budgeting) (0-1, "
+"default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Distributed under the MIT software license, see the accompanying file "
 "COPYING or <http://www.opensource.org/licenses/mit-license.php>."),
@@ -74,18 +75,11 @@ QT_TRANSLATE_NOOP("cari-core", ""
 QT_TRANSLATE_NOOP("cari-core", ""
 "Do not keep transactions in the mempool longer than <n> hours (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Enable SwiftX, show confirmations for locked transactions (bool, default: %s)"),
-QT_TRANSLATE_NOOP("cari-core", ""
 "Enable cold staking functionality (0-1, default: %u). Disabled if staking=0"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Enable spork administration functionality with the appropriate private key."),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Enter regression test mode, which uses a special chain in which blocks can "
-"be solved instantly."),
-QT_TRANSLATE_NOOP("cari-core", ""
 "Error: Listening for incoming connections failed (listen returned error %s)"),
-QT_TRANSLATE_NOOP("cari-core", ""
-"Error: The transaction is larger than the maximum allowed transaction size!"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Error: Unsupported argument -checklevel found. Checklevel must be level 4."),
 QT_TRANSLATE_NOOP("cari-core", ""
@@ -105,11 +99,6 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "Execute command when the best block changes (%s in cmd is replaced by block "
 "hash)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Execute command when the best block changes and its size is over (%s in cmd "
-"is replaced by block hash, %d with the block size)"),
-QT_TRANSLATE_NOOP("cari-core", ""
-"Failed to find coin set amongst held coins with less than maxNumber of Spends"),
-QT_TRANSLATE_NOOP("cari-core", ""
 "Fees (in %s/Kb) smaller than this are considered zero fee for relaying, "
 "mining and transaction creation (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", ""
@@ -121,15 +110,6 @@ QT_TRANSLATE_NOOP("cari-core", ""
 QT_TRANSLATE_NOOP("cari-core", ""
 "If paytxfee is not set, include enough fee so transactions begin "
 "confirmation on average within n blocks (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", ""
-"In rare cases, a spend with 7 coins exceeds our maximum allowable "
-"transaction size, please retry spend using 6 or less coins"),
-QT_TRANSLATE_NOOP("cari-core", ""
-"In this mode -genproclimit controls how many blocks are generated "
-"immediately."),
-QT_TRANSLATE_NOOP("cari-core", ""
-"Insufficient or insufficient confirmed funds, you might need to wait a few "
-"minutes and try again."),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minrelay "
 "fee of %s to prevent stuck transactions)"),
@@ -150,7 +130,7 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "Maximum total fees to use in a single wallet transaction, setting too low "
 "may abort large transactions (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Minimum positive amount (in CARI) allowed by GUI and RPC for the stake split "
+"Minimum positive amount (in PIV) allowed by GUI and RPC for the stake split "
 "threshold (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Number of seconds to keep misbehaving peers from reconnecting (default: %u)"),
@@ -178,9 +158,6 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "Set the number of threads for coin generation if enabled (-1 = all cores, "
 "default: %d)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Show N confirmations for a successfully locked transaction (0-9999, default: "
-"%u)"),
-QT_TRANSLATE_NOOP("cari-core", ""
 "Specify custom backup path to add a copy of any wallet backup. If set as "
 "dir, every backup generates a timestamped file. If set as file, will rewrite "
 "to that file every backup."),
@@ -190,13 +167,16 @@ QT_TRANSLATE_NOOP("cari-core", ""
 QT_TRANSLATE_NOOP("cari-core", ""
 "Support filtering of blocks and transaction with bloom filters (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", ""
-"SwiftX requires inputs with at least 6 confirmations, you might need to wait "
-"a few minutes and try again."),
+"System error while flushing the chainstate after pruning invalid entries. "
+"Possible corrupt database."),
 QT_TRANSLATE_NOOP("cari-core", ""
 "The block database contains a block which appears to be from the future. "
 "This may be due to your computer's date and time being set incorrectly. Only "
 "rebuild the block database if you are sure that your computer's date and "
 "time are correct"),
+QT_TRANSLATE_NOOP("cari-core", ""
+"This file contains all of your private keys in plain text. DO NOT send this "
+"file to anyone!"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "This is a pre-release test build - use at your own risk - do not use for "
 "staking or merchant applications!"),
@@ -209,6 +189,9 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "Reduce the number or size of uacomments."),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Unable to bind to %s on this computer. CARI Core is probably already running."),
+QT_TRANSLATE_NOOP("cari-core", ""
+"Unable to replay blocks. You will need to rebuild the database using -"
+"reindex."),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Use separate SOCKS5 proxy to reach peers via Tor hidden services (default: "
 "%s)"),
@@ -231,42 +214,37 @@ QT_TRANSLATE_NOOP("cari-core", ""
 "Warning: We do not appear to fully agree with our peers! You may need to "
 "upgrade, or other nodes may need to upgrade."),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Warning: error reading wallet.dat! All keys read correctly, but transaction "
-"data or address book entries might be missing or incorrect."),
+"Warning: error reading %s! All keys read correctly, but transaction data or "
+"address book entries might be missing or incorrect."),
 QT_TRANSLATE_NOOP("cari-core", ""
-"Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as "
-"wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect "
-"you should restore from a backup."),
+"Whether to save the mempool on shutdown and load on restart (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Whitelist peers connecting from the given netmask or IP address. Can be "
 "specified multiple times."),
 QT_TRANSLATE_NOOP("cari-core", ""
 "Whitelisted peers cannot be DoS banned and their transactions are always "
 "relayed, even if they are already in the mempool, useful e.g. for a gateway"),
-QT_TRANSLATE_NOOP("cari-core", ""
-"You must specify a masternodeprivkey in the configuration. Please see "
-"documentation for help."),
 QT_TRANSLATE_NOOP("cari-core", "(default: %s)"),
-QT_TRANSLATE_NOOP("cari-core", "(default: 1)"),
 QT_TRANSLATE_NOOP("cari-core", "(must be %d for %s-net)"),
 QT_TRANSLATE_NOOP("cari-core", "<category> can be:"),
+QT_TRANSLATE_NOOP("cari-core", "A fatal internal error occurred, see debug.log for details"),
 QT_TRANSLATE_NOOP("cari-core", "Accept command line and JSON-RPC commands"),
 QT_TRANSLATE_NOOP("cari-core", "Accept public REST requests (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Active Masternode not initialized."),
 QT_TRANSLATE_NOOP("cari-core", "Add a node to connect to and attempt to keep the connection open"),
-QT_TRANSLATE_NOOP("cari-core", "Allow DNS lookups for -addnode, -seednode and -connect"),
+QT_TRANSLATE_NOOP("cari-core", "Allow DNS lookups for -addnode, -seednode and -connect (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Allows deprecated RPC method(s) to be used"),
 QT_TRANSLATE_NOOP("cari-core", "Always query for peer addresses via DNS lookup (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Append comment to the user agent string"),
 QT_TRANSLATE_NOOP("cari-core", "Attempt to force blockchain corruption recovery"),
-QT_TRANSLATE_NOOP("cari-core", "Attempt to recover private keys from a corrupt wallet.dat"),
+QT_TRANSLATE_NOOP("cari-core", "Attempt to recover private keys from a corrupt wallet file"),
 QT_TRANSLATE_NOOP("cari-core", "Automatically create Tor hidden service (default: %d)"),
 QT_TRANSLATE_NOOP("cari-core", "Block creation options:"),
+QT_TRANSLATE_NOOP("cari-core", "Calculating money supply..."),
 QT_TRANSLATE_NOOP("cari-core", "Can't generate a change-address key. Please call keypoolrefill first."),
-QT_TRANSLATE_NOOP("cari-core", "Cannot create public spend input"),
-QT_TRANSLATE_NOOP("cari-core", "Cannot downgrade wallet"),
 QT_TRANSLATE_NOOP("cari-core", "Cannot resolve -%s address: '%s'"),
-QT_TRANSLATE_NOOP("cari-core", "Cannot upgrade to HD wallet (already running HD support). Version: %d"),
+QT_TRANSLATE_NOOP("cari-core", "Cannot set -bind or -whitebind together with -listen=0"),
+QT_TRANSLATE_NOOP("cari-core", "Chain selection options:"),
 QT_TRANSLATE_NOOP("cari-core", "Change index out of range"),
 QT_TRANSLATE_NOOP("cari-core", "Connect through SOCKS5 proxy"),
 QT_TRANSLATE_NOOP("cari-core", "Connect to a node to retrieve peer addresses, and disconnect"),
@@ -279,7 +257,6 @@ QT_TRANSLATE_NOOP("cari-core", "Could not parse masternode.conf"),
 QT_TRANSLATE_NOOP("cari-core", "Debugging/Testing options:"),
 QT_TRANSLATE_NOOP("cari-core", "Delete blockchain folders and resync from scratch"),
 QT_TRANSLATE_NOOP("cari-core", "Disable OS notifications for incoming transactions (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "Disable safemode, override a real safe mode event (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Discover own IP address (default: 1 when listening and no -externalip)"),
 QT_TRANSLATE_NOOP("cari-core", "Display the stake modifier calculations in the debug.log file."),
 QT_TRANSLATE_NOOP("cari-core", "Display verbose coin stake messages in the debug.log file."),
@@ -287,41 +264,29 @@ QT_TRANSLATE_NOOP("cari-core", "Do not load the wallet and disable wallet RPC ca
 QT_TRANSLATE_NOOP("cari-core", "Do you want to rebuild the block database now?"),
 QT_TRANSLATE_NOOP("cari-core", "Done loading"),
 QT_TRANSLATE_NOOP("cari-core", "Enable publish hash block in <address>"),
-QT_TRANSLATE_NOOP("cari-core", "Enable publish hash transaction (locked via SwiftX) in <address>"),
 QT_TRANSLATE_NOOP("cari-core", "Enable publish hash transaction in <address>"),
 QT_TRANSLATE_NOOP("cari-core", "Enable publish raw block in <address>"),
-QT_TRANSLATE_NOOP("cari-core", "Enable publish raw transaction (locked via SwiftX) in <address>"),
 QT_TRANSLATE_NOOP("cari-core", "Enable publish raw transaction in <address>"),
 QT_TRANSLATE_NOOP("cari-core", "Enable staking functionality (0-1, default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Enable the client to act as a masternode (0-1, default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Error initializing block database"),
-QT_TRANSLATE_NOOP("cari-core", "Error initializing wallet database environment %s!"),
+QT_TRANSLATE_NOOP("cari-core", "Error loading %s: Wallet corrupted"),
+QT_TRANSLATE_NOOP("cari-core", "Error loading %s: Wallet requires newer version of CARI Core"),
+QT_TRANSLATE_NOOP("cari-core", "Error loading %s\n"),
 QT_TRANSLATE_NOOP("cari-core", "Error loading block database"),
-QT_TRANSLATE_NOOP("cari-core", "Error loading wallet.dat"),
-QT_TRANSLATE_NOOP("cari-core", "Error loading wallet.dat: Wallet corrupted"),
-QT_TRANSLATE_NOOP("cari-core", "Error loading wallet.dat: Wallet requires newer version of CARI Core"),
 QT_TRANSLATE_NOOP("cari-core", "Error opening block database"),
 QT_TRANSLATE_NOOP("cari-core", "Error reading from database, shutting down."),
-QT_TRANSLATE_NOOP("cari-core", "Error writing zerocoinDB to disk"),
+QT_TRANSLATE_NOOP("cari-core", "Error upgrading chainstate database"),
 QT_TRANSLATE_NOOP("cari-core", "Error"),
-QT_TRANSLATE_NOOP("cari-core", "Error: "),
 QT_TRANSLATE_NOOP("cari-core", "Error: -listen must be true if -masternode is set."),
 QT_TRANSLATE_NOOP("cari-core", "Error: -maxmempool must be at least %d MB"),
 QT_TRANSLATE_NOOP("cari-core", "Error: A fatal internal error occured, see debug.log for details"),
 QT_TRANSLATE_NOOP("cari-core", "Error: A fatal internal error occurred, see debug.log for details"),
 QT_TRANSLATE_NOOP("cari-core", "Error: Disk space is low!"),
-QT_TRANSLATE_NOOP("cari-core", "Error: Invalid port %d for running a masternode."),
-QT_TRANSLATE_NOOP("cari-core", "Error: No valid utxo!"),
 QT_TRANSLATE_NOOP("cari-core", "Error: Unsupported argument -tor found, use -onion."),
-QT_TRANSLATE_NOOP("cari-core", "Error: Wallet locked, unable to create transaction!"),
 QT_TRANSLATE_NOOP("cari-core", "Failed to accept tx in the memory pool (reason: %s)\n"),
-QT_TRANSLATE_NOOP("cari-core", "Failed to find Zerocoins in wallet.dat"),
 QT_TRANSLATE_NOOP("cari-core", "Failed to listen on any port. Use -listen=0 if you want this."),
 QT_TRANSLATE_NOOP("cari-core", "Failed to parse host:port string"),
-QT_TRANSLATE_NOOP("cari-core", "Failed to parse public spend"),
-QT_TRANSLATE_NOOP("cari-core", "Failed to select a zerocoin"),
-QT_TRANSLATE_NOOP("cari-core", "Failed to wipe zerocoinDB"),
-QT_TRANSLATE_NOOP("cari-core", "Failed to write coin serial number into wallet"),
 QT_TRANSLATE_NOOP("cari-core", "Fee (in %s/kB) to add to transactions you send (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", "Force safe mode (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Generate coins (default: %u)"),
@@ -332,16 +297,15 @@ QT_TRANSLATE_NOOP("cari-core", "Imports blocks from external blk000??.dat file")
 QT_TRANSLATE_NOOP("cari-core", "Include IP addresses in debug output (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Incorrect or no genesis block found. Wrong datadir for network?"),
 QT_TRANSLATE_NOOP("cari-core", "Information"),
-QT_TRANSLATE_NOOP("cari-core", "Initialization sanity check failed. CARI Core is shutting down."),
-QT_TRANSLATE_NOOP("cari-core", "Insufficient funds"),
+QT_TRANSLATE_NOOP("cari-core", "Initialization sanity check failed. %s is shutting down."),
 QT_TRANSLATE_NOOP("cari-core", "Insufficient funds."),
 QT_TRANSLATE_NOOP("cari-core", "Invalid -masternodeaddr address: %s"),
+QT_TRANSLATE_NOOP("cari-core", "Invalid -masternodeaddr port %d, isn't the same as the peer port %d"),
 QT_TRANSLATE_NOOP("cari-core", "Invalid -masternodeaddr port %d, only %d is supported on %s-net."),
 QT_TRANSLATE_NOOP("cari-core", "Invalid -onion address or hostname: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "Invalid amount for -%s=<amount>: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "Invalid amount for -paytxfee=<amount>: '%s' (must be at least %s)"),
-QT_TRANSLATE_NOOP("cari-core", "Invalid amount"),
-QT_TRANSLATE_NOOP("cari-core", "Invalid masternodeprivkey. Please see documenation."),
+QT_TRANSLATE_NOOP("cari-core", "Invalid masternodeprivkey. Please see the documentation."),
 QT_TRANSLATE_NOOP("cari-core", "Invalid netmask specified in -whitelist: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "Invalid port %d detected in masternode.conf"),
 QT_TRANSLATE_NOOP("cari-core", "Invalid status error."),
@@ -360,22 +324,21 @@ QT_TRANSLATE_NOOP("cari-core", "Loading masternode cache..."),
 QT_TRANSLATE_NOOP("cari-core", "Loading masternode payment cache..."),
 QT_TRANSLATE_NOOP("cari-core", "Loading sporks..."),
 QT_TRANSLATE_NOOP("cari-core", "Loading wallet..."),
+QT_TRANSLATE_NOOP("cari-core", "Loading/Pruning invalid outputs..."),
 QT_TRANSLATE_NOOP("cari-core", "Location of the auth cookie (default: data dir)"),
 QT_TRANSLATE_NOOP("cari-core", "Lock masternodes from masternode configuration file (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Lookup(): Invalid -proxy address or hostname: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "MNs synchronization pending..."),
 QT_TRANSLATE_NOOP("cari-core", "Maintain at most <n> connections to peers (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Masternode options:"),
-QT_TRANSLATE_NOOP("cari-core", "Masternodes are required to run on port %d for %s-net"),
 QT_TRANSLATE_NOOP("cari-core", "Maximum per-connection receive buffer, <n>*1000 bytes (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Maximum per-connection send buffer, <n>*1000 bytes (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "Mint did not make it into blockchain"),
-QT_TRANSLATE_NOOP("cari-core", "Need destination or change address because change is not exact"),
+QT_TRANSLATE_NOOP("cari-core", "Mining/Staking options:"),
 QT_TRANSLATE_NOOP("cari-core", "Need to specify a port with -whitebind: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "No error"),
 QT_TRANSLATE_NOOP("cari-core", "Node relay options:"),
 QT_TRANSLATE_NOOP("cari-core", "Not enough file descriptors available."),
-QT_TRANSLATE_NOOP("cari-core", "Number of automatic wallet backups (default: 10)"),
+QT_TRANSLATE_NOOP("cari-core", "Number of automatic wallet backups (default: %d)"),
 QT_TRANSLATE_NOOP("cari-core", "Number of custom location backups to retain (default: %d)"),
 QT_TRANSLATE_NOOP("cari-core", "On first run, create a legacy wallet instead of a HD wallet"),
 QT_TRANSLATE_NOOP("cari-core", "Only accept block chain matching built-in checkpoints (default: %u)"),
@@ -386,25 +349,18 @@ QT_TRANSLATE_NOOP("cari-core", "Peers are being disconnected due time difference
 QT_TRANSLATE_NOOP("cari-core", "Preparing for resync..."),
 QT_TRANSLATE_NOOP("cari-core", "Prepend debug output with timestamp (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Print version and exit"),
-QT_TRANSLATE_NOOP("cari-core", "Pubcoin not found in mint tx"),
 QT_TRANSLATE_NOOP("cari-core", "RPC server options:"),
 QT_TRANSLATE_NOOP("cari-core", "Randomly drop 1 of every <n> network messages"),
 QT_TRANSLATE_NOOP("cari-core", "Randomly fuzz 1 of every <n> network messages"),
+QT_TRANSLATE_NOOP("cari-core", "Reaccepting wallet transactions..."),
 QT_TRANSLATE_NOOP("cari-core", "Rebuild block chain index from current blk000??.dat files"),
-QT_TRANSLATE_NOOP("cari-core", "Recalculating CARI supply..."),
-QT_TRANSLATE_NOOP("cari-core", "Reindex the %s and z%s money supply statistics"),
-QT_TRANSLATE_NOOP("cari-core", "Reindexing zerocoin database..."),
-QT_TRANSLATE_NOOP("cari-core", "Reindexing zerocoin failed"),
 QT_TRANSLATE_NOOP("cari-core", "Relay and mine data carrier transactions (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Relay non-P2SH multisig (default: %u)"),
+QT_TRANSLATE_NOOP("cari-core", "Replaying blocks..."),
 QT_TRANSLATE_NOOP("cari-core", "Rescan the block chain for missing wallet transactions"),
 QT_TRANSLATE_NOOP("cari-core", "Rescanning..."),
-QT_TRANSLATE_NOOP("cari-core", "ResetMintZerocoin finished: "),
-QT_TRANSLATE_NOOP("cari-core", "ResetSpentZerocoin finished: "),
 QT_TRANSLATE_NOOP("cari-core", "Run a thread to flush wallet periodically (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Run in the background as a daemon and accept commands"),
-QT_TRANSLATE_NOOP("cari-core", "Selected coins value is less than payment target"),
-QT_TRANSLATE_NOOP("cari-core", "Send transactions as zero-fee transactions if possible (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Set database cache size in megabytes (%d to %d, default: %d)"),
 QT_TRANSLATE_NOOP("cari-core", "Set external address:port to get to this masternode (example: %s)"),
 QT_TRANSLATE_NOOP("cari-core", "Set key pool size to <n> (default: %u)"),
@@ -416,6 +372,7 @@ QT_TRANSLATE_NOOP("cari-core", "Set the number of threads to service RPC calls (
 QT_TRANSLATE_NOOP("cari-core", "Sets the DB_PRIVATE flag in the wallet db environment (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Show all debugging options (usage: --help -help-debug)"),
 QT_TRANSLATE_NOOP("cari-core", "Shrink debug.log file on client startup (default: 1 when no -debug)"),
+QT_TRANSLATE_NOOP("cari-core", "Shutdown requested over the txs scan. Exiting."),
 QT_TRANSLATE_NOOP("cari-core", "Signing transaction failed"),
 QT_TRANSLATE_NOOP("cari-core", "Specify configuration file (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", "Specify connection timeout in milliseconds (minimum: 1, default: %d)"),
@@ -424,57 +381,44 @@ QT_TRANSLATE_NOOP("cari-core", "Specify masternode configuration file (default: 
 QT_TRANSLATE_NOOP("cari-core", "Specify pid file (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", "Specify wallet file (within data directory)"),
 QT_TRANSLATE_NOOP("cari-core", "Specify your own public address"),
-QT_TRANSLATE_NOOP("cari-core", "Spend Valid"),
+QT_TRANSLATE_NOOP("cari-core", "Specify zk params directory (default: %s)"),
 QT_TRANSLATE_NOOP("cari-core", "Spend unconfirmed change when sending transactions (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "Staking options:"),
 QT_TRANSLATE_NOOP("cari-core", "Stop running after importing blocks from disk (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "SwiftX options:"),
 QT_TRANSLATE_NOOP("cari-core", "Synchronization failed"),
 QT_TRANSLATE_NOOP("cari-core", "Synchronization finished"),
 QT_TRANSLATE_NOOP("cari-core", "Synchronizing budgets..."),
 QT_TRANSLATE_NOOP("cari-core", "Synchronizing masternode winners..."),
 QT_TRANSLATE_NOOP("cari-core", "Synchronizing masternodes..."),
 QT_TRANSLATE_NOOP("cari-core", "Synchronizing sporks..."),
-QT_TRANSLATE_NOOP("cari-core", "Syncing zCARI wallet..."),
 QT_TRANSLATE_NOOP("cari-core", "The threshold value cannot be less than %s"),
 QT_TRANSLATE_NOOP("cari-core", "This help message"),
 QT_TRANSLATE_NOOP("cari-core", "This is experimental software."),
-QT_TRANSLATE_NOOP("cari-core", "This is intended for regression testing tools and app development."),
 QT_TRANSLATE_NOOP("cari-core", "This is not a masternode. 'local' option disabled."),
 QT_TRANSLATE_NOOP("cari-core", "This is not a masternode."),
 QT_TRANSLATE_NOOP("cari-core", "Threshold for disconnecting misbehaving peers (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "Too many spends needed"),
 QT_TRANSLATE_NOOP("cari-core", "Tor control port password (default: empty)"),
 QT_TRANSLATE_NOOP("cari-core", "Tor control port to use if onion listening enabled (default: %s)"),
-QT_TRANSLATE_NOOP("cari-core", "Transaction Created"),
-QT_TRANSLATE_NOOP("cari-core", "Transaction Mint Started"),
 QT_TRANSLATE_NOOP("cari-core", "Transaction amount too small"),
 QT_TRANSLATE_NOOP("cari-core", "Transaction amounts must be positive"),
 QT_TRANSLATE_NOOP("cari-core", "Transaction canceled."),
 QT_TRANSLATE_NOOP("cari-core", "Transaction too large for fee policy"),
 QT_TRANSLATE_NOOP("cari-core", "Transaction too large"),
-QT_TRANSLATE_NOOP("cari-core", "Trying to spend an already spent serial #, try again."),
 QT_TRANSLATE_NOOP("cari-core", "Unable to bind to %s on this computer (bind returned error %s)"),
-QT_TRANSLATE_NOOP("cari-core", "Unable to find transaction containing mint %s"),
-QT_TRANSLATE_NOOP("cari-core", "Unable to find transaction containing mint, txHash: %s"),
-QT_TRANSLATE_NOOP("cari-core", "Unable to generate initial key"),
 QT_TRANSLATE_NOOP("cari-core", "Unable to generate keys"),
 QT_TRANSLATE_NOOP("cari-core", "Unable to sign spork message, wrong key?"),
 QT_TRANSLATE_NOOP("cari-core", "Unable to start HTTP server. See debug log for details."),
 QT_TRANSLATE_NOOP("cari-core", "Unknown network specified in -onlynet: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "Unsupported logging category %s=%s."),
 QT_TRANSLATE_NOOP("cari-core", "Upgrade wallet to latest format"),
+QT_TRANSLATE_NOOP("cari-core", "Upgrading coins database if needed..."),
 QT_TRANSLATE_NOOP("cari-core", "Use UPnP to map the listening port (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "Use UPnP to map the listening port (default: 1 when listening)"),
-QT_TRANSLATE_NOOP("cari-core", "Use a custom max chain reorganization depth (default: %u)"),
 QT_TRANSLATE_NOOP("cari-core", "Use block spam filter (default: %u)"),
-QT_TRANSLATE_NOOP("cari-core", "Use the test network"),
+QT_TRANSLATE_NOOP("cari-core", "Use the test chain"),
 QT_TRANSLATE_NOOP("cari-core", "User Agent comment (%s) contains unsafe characters."),
 QT_TRANSLATE_NOOP("cari-core", "Username for JSON-RPC connections"),
-QT_TRANSLATE_NOOP("cari-core", "Value is below the smallest available denomination (= 1) of zCARI"),
 QT_TRANSLATE_NOOP("cari-core", "Verifying blocks..."),
 QT_TRANSLATE_NOOP("cari-core", "Verifying wallet..."),
-QT_TRANSLATE_NOOP("cari-core", "Wallet %s resides outside data directory %s"),
+QT_TRANSLATE_NOOP("cari-core", "Wallet debugging/testing options:"),
 QT_TRANSLATE_NOOP("cari-core", "Wallet needed to be rewritten: restart CARI Core to complete"),
 QT_TRANSLATE_NOOP("cari-core", "Wallet options:"),
 QT_TRANSLATE_NOOP("cari-core", "Wallet window title"),
@@ -482,13 +426,9 @@ QT_TRANSLATE_NOOP("cari-core", "Warning"),
 QT_TRANSLATE_NOOP("cari-core", "Warning: This version is obsolete, upgrade required!"),
 QT_TRANSLATE_NOOP("cari-core", "Warning: Unsupported argument -benchmark ignored, use -debug=bench."),
 QT_TRANSLATE_NOOP("cari-core", "Warning: Unsupported argument -debugnet ignored, use -debug=net."),
-QT_TRANSLATE_NOOP("cari-core", "You don't have enough Zerocoins in your wallet"),
 QT_TRANSLATE_NOOP("cari-core", "You need to rebuild the database using -reindex to change -txindex"),
 QT_TRANSLATE_NOOP("cari-core", "Zapping all transactions from wallet..."),
 QT_TRANSLATE_NOOP("cari-core", "ZeroMQ notification options:"),
-QT_TRANSLATE_NOOP("cari-core", "Zerocoin minting available only on regtest"),
-QT_TRANSLATE_NOOP("cari-core", "Zerocoin options:"),
 QT_TRANSLATE_NOOP("cari-core", "isValid(): Invalid -proxy address or hostname: '%s'"),
 QT_TRANSLATE_NOOP("cari-core", "on startup"),
-QT_TRANSLATE_NOOP("cari-core", "wallet.dat corrupt, salvage failed"),
 };

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -11,18 +11,9 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-// contextual flag to guard the serialization for v5 upgrade.
-// can be removed once v5 enforcement is activated.
-std::atomic<bool> g_IsSaplingActive{false};
-
 std::string BaseOutPoint::ToStringShort() const
 {
     return strprintf("%s-%u", hash.ToString().substr(0,64), n);
-}
-
-uint256 BaseOutPoint::GetHash() const
-{
-    return Hash(BEGIN(hash), END(hash), BEGIN(n), END(n));
 }
 
 std::string COutPoint::ToString() const
@@ -125,9 +116,9 @@ uint256 CMutableTransaction::GetHash() const
     return SerializeHash(*this);
 }
 
-void CTransaction::UpdateHash() const
+uint256 CTransaction::ComputeHash() const
 {
-    *const_cast<uint256*>(&hash) = SerializeHash(*this);
+    return SerializeHash(*this);
 }
 
 size_t CTransaction::DynamicMemoryUsage() const
@@ -135,27 +126,10 @@ size_t CTransaction::DynamicMemoryUsage() const
     return memusage::RecursiveDynamicUsage(vin) + memusage::RecursiveDynamicUsage(vout);
 }
 
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(TxType::NORMAL), vin(), vout(), nLockTime(0), fPoWAlternative(false) {}
-
-CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), fPoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload) {
-    UpdateHash();
-}
-
-CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), nType(tx.nType), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), fPoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload) {
-    UpdateHash();
-}
-
-CTransaction& CTransaction::operator=(const CTransaction &tx) {
-    *const_cast<int16_t*>(&nVersion) = tx.nVersion;
-    *const_cast<int16_t*>(&nType) = tx.nType;
-    *const_cast<std::vector<CTxIn>*>(&vin) = tx.vin;
-    *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
-    *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
-    *const_cast<bool *>(&fPoWAlternative) = tx.fPoWAlternative;
-    *const_cast<uint256*>(&hash) = tx.hash;
-    *const_cast<Optional<SaplingTxData>*>(&sapData) = tx.sapData;
-    return *this;
-}
+/* For backward compatibility, the hash is initialized to 0. TODO: remove the need for this default constructor entirely. */
+CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(TxType::NORMAL), vin(), vout(), nLockTime(0), hash() , fPoWAlternative(false) {}
+CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), PoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload), hash(ComputeHash()) {}
+CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), nType(tx.nType), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), fPoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload), hash(ComputeHash()) {}
 
 bool CTransaction::HasZerocoinSpendInputs() const
 {
@@ -177,7 +151,7 @@ bool CTransaction::HasZerocoinMintOutputs() const
 
 bool CTransaction::HasZerocoinPublicSpendInputs() const
 {
-    // The wallet only allows publicSpend inputs in the same tx and not a combination between cari and zcari
+    // The wallet only allows publicSpend inputs in the same tx and not a combination between piv and zcari
     for(const CTxIn& txin : vin) {
         if (txin.IsZerocoinPublicSpend())
             return true;
@@ -197,31 +171,6 @@ bool CTransaction::IsCoinStake() const
     return (vout.size() >= 2 && vout[0].IsEmpty());
 }
 
-bool CTransaction::CheckColdStake(const CScript& script) const
-{
-
-    // tx is a coinstake tx
-    if (!IsCoinStake())
-        return false;
-
-    // all inputs have the same scriptSig
-    CScript firstScript = vin[0].scriptSig;
-    if (vin.size() > 1) {
-        for (unsigned int i=1; i<vin.size(); i++)
-            if (vin[i].scriptSig != firstScript) return false;
-    }
-
-    // all outputs except first (coinstake marker) and last (masternode payout)
-    // have the same pubKeyScript and it matches the script we are spending
-    if (vout[1].scriptPubKey != script) return false;
-    if (vin.size() > 3) {
-        for (unsigned int i=2; i<vout.size()-1; i++)
-            if (vout[i].scriptPubKey != script) return false;
-    }
-
-    return true;
-}
-
 bool CTransaction::HasP2CSOutputs() const
 {
     for(const CTxOut& txout : vout) {
@@ -235,7 +184,7 @@ CAmount CTransaction::GetValueOut() const
 {
     CAmount nValueOut = 0;
     for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it) {
-        // PIVX: previously MoneyRange() was called here. This has been replaced with negative check and boundary wrap check.
+        // CARI: previously MoneyRange() was called here. This has been replaced with negative check and boundary wrap check.
         if (it->nValue < 0)
             throw std::runtime_error("CTransaction::GetValueOut() : value out of range : less than 0");
 

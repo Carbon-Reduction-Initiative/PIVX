@@ -1,7 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -50,10 +50,10 @@ static const CRPCConvertParam vRPCConvertParams[] = {
     { "listreceivedbylabel", 0 },
     { "listreceivedbylabel", 1 },
     { "listreceivedbylabel", 2 },
+    { "getbalance", 0 },
     { "getbalance", 1 },
     { "getbalance", 2 },
     { "getbalance", 3 },
-    { "getbalance", 4 },
     { "getshieldbalance", 1 },
     { "getshieldbalance", 2 },
     { "rawshieldsendmany", 1 },

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2020 The CARI developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,9 +11,9 @@
 class CLegacyZCariStake : public CStakeInput
 {
 private:
-    uint32_t nChecksum;
-    libzerocoin::CoinDenomination denom;
-    uint256 hashSerial;
+    uint32_t nChecksum{0};
+    libzerocoin::CoinDenomination denom{libzerocoin::ZQ_ERROR};
+    uint256 hashSerial{UINT256_ZERO};
 
 public:
     CLegacyZCariStake() : CStakeInput(nullptr) {}

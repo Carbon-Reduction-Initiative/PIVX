@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -482,12 +482,11 @@ void OptionsModel::setDisplayUnit(const QVariant& value)
 void OptionsModel::setStakeSplitThreshold(const CAmount nStakeSplitThreshold)
 {
     if (pwalletMain && pwalletMain->nStakeSplitThreshold != nStakeSplitThreshold) {
-        CWalletDB walletdb(pwalletMain->strWalletFile);
+        CWalletDB walletdb(pwalletMain->GetDBHandle());
         LOCK(pwalletMain->cs_wallet);
         {
             pwalletMain->nStakeSplitThreshold = nStakeSplitThreshold;
-            if (pwalletMain->fFileBacked)
-                walletdb.WriteStakeSplitThreshold(nStakeSplitThreshold);
+            walletdb.WriteStakeSplitThreshold(nStakeSplitThreshold);
         }
     }
 }
@@ -513,12 +512,11 @@ bool OptionsModel::isSSTValid()
 void OptionsModel::setUseCustomFee(bool fUse)
 {
     if (pwalletMain && pwalletMain->fUseCustomFee != fUse) {
-        CWalletDB walletdb(pwalletMain->strWalletFile);
+        CWalletDB walletdb(pwalletMain->GetDBHandle());
         {
             LOCK(pwalletMain->cs_wallet);
             pwalletMain->fUseCustomFee = fUse;
-            if (pwalletMain->fFileBacked)
-                walletdb.WriteUseCustomFee(fUse);
+            walletdb.WriteUseCustomFee(fUse);
         }
     }
 }
@@ -526,12 +524,11 @@ void OptionsModel::setUseCustomFee(bool fUse)
 void OptionsModel::setCustomFeeValue(const CAmount& value)
 {
     if (pwalletMain && pwalletMain->nCustomFee != value) {
-        CWalletDB walletdb(pwalletMain->strWalletFile);
+        CWalletDB walletdb(pwalletMain->GetDBHandle());
         {
             LOCK(pwalletMain->cs_wallet);
             pwalletMain->nCustomFee = value;
-            if (pwalletMain->fFileBacked)
-                walletdb.WriteCustomFeeValue(value);
+            walletdb.WriteCustomFeeValue(value);
         }
     }
 }
