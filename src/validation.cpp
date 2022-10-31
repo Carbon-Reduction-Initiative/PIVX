@@ -4044,13 +4044,11 @@ void static CheckBlockIndex()
 //       it was the one which was commented out
 int ActiveProtocol()
 {
-    // SPORK_14 is used for 70922 (v5.2.0)
-    if (sporkManager.IsSporkActive(SPORK_14_NEW_PROTOCOL_ENFORCEMENT))
-            return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT;
-
-    // SPORK_15 was used for 70921 (v5.0.1), commented out now.
-    //if (sporkManager.IsSporkActive(SPORK_15_NEW_PROTOCOL_ENFORCEMENT_2))
-    //        return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT;
+    if (sporkManager.IsSporkActive(SPORK_35_NEW_PROTOCOL_ENFORCEMENT_5)) return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT_5;
+    if (sporkManager.IsSporkActive(SPORK_34_NEW_PROTOCOL_ENFORCEMENT_4)) return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT_4;
+    if (sporkManager.IsSporkActive(SPORK_33_NEW_PROTOCOL_ENFORCEMENT_3)) return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT_3;
+    if (sporkManager.IsSporkActive(SPORK_32_NEW_PROTOCOL_ENFORCEMENT_2)) return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT_2;
+    if (sporkManager.IsSporkActive(SPORK_31_NEW_PROTOCOL_ENFORCEMENT_1)) return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT_1;
 
     return MIN_PEER_PROTO_VERSION_BEFORE_ENFORCEMENT;
 }
