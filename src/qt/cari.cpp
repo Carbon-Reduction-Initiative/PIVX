@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2015-2020 The CARI developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -25,6 +25,7 @@
 #ifdef ENABLE_WALLET
 #include "paymentserver.h"
 #include "walletmodel.h"
+#include "interfaces/wallet.h"
 #endif
 #include "masternodeconfig.h"
 
@@ -69,6 +70,8 @@ Q_IMPORT_PLUGIN(QGifPlugin);
 // Declare meta types used for QMetaObject::invokeMethod
 Q_DECLARE_METATYPE(bool*)
 Q_DECLARE_METATYPE(CAmount)
+Q_DECLARE_METATYPE(interfaces::WalletBalances);
+Q_DECLARE_METATYPE(uint256)
 
 static void InitMessage(const std::string& message)
 {
@@ -168,7 +171,7 @@ Q_SIGNALS:
 
 private:
     /// Flag indicating a restart
-    bool execute_restart;
+    bool execute_restart{false};
 
     /// Pass fatal exception message to UI thread
     void handleRunawayException(const std::exception* e);
@@ -224,16 +227,16 @@ Q_SIGNALS:
     void splashFinished(QWidget* window);
 
 private:
-    QThread* coreThread;
-    OptionsModel* optionsModel;
-    ClientModel* clientModel;
-    CARIGUI* window;
-    QTimer* pollShutdownTimer;
+    QThread* coreThread{nullptr};
+    OptionsModel* optionsModel{nullptr};
+    ClientModel* clientModel{nullptr};
+    CARIGUI* window{nullptr};
+    QTimer* pollShutdownTimer{nullptr};
 #ifdef ENABLE_WALLET
-    PaymentServer* paymentServer;
-    WalletModel* walletModel;
+    PaymentServer* paymentServer{nullptr};
+    WalletModel* walletModel{nullptr};
 #endif
-    int returnValue;
+    int returnValue{0};
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
 
     void startThread();
@@ -257,7 +260,19 @@ void BitcoinCore::initialize()
 
     try {
         qDebug() << __func__ << ": Running AppInit2 in thread";
-        int rv = AppInit2();
+        if (!AppInitBasicSetup()) {
+            Q_EMIT initializeResult(false);
+            return;
+        }
+        if (!AppInitParameterInteraction()) {
+            Q_EMIT initializeResult(false);
+            return;
+        }
+        if (!AppInitSanityChecks()) {
+            Q_EMIT initializeResult(false);
+            return;
+        }
+        int rv = AppInitMain();
         Q_EMIT initializeResult(rv);
     } catch (const std::exception& e) {
         handleRunawayException(&e);
@@ -361,7 +376,6 @@ void BitcoinApplication::createWindow(const NetworkStyle* networkStyle)
 
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, &QTimer::timeout, window, &CARIGUI::detectShutdown);
-    pollShutdownTimer->start(200);
 }
 
 void BitcoinApplication::createSplashScreen(const NetworkStyle* networkStyle)
@@ -438,19 +452,22 @@ void BitcoinApplication::requestShutdown()
     qDebug() << __func__ << ": Requesting shutdown";
     startThread();
     window->hide();
-    window->setClientModel(0);
+    if (walletModel) walletModel->stop();
+    window->setClientModel(nullptr);
     pollShutdownTimer->stop();
 
 #ifdef ENABLE_WALLET
     window->removeAllWallets();
     delete walletModel;
-    walletModel = 0;
+    walletModel = nullptr;
 #endif
     delete clientModel;
-    clientModel = 0;
+    clientModel = nullptr;
 
     // Show a simple window indicating shutdown status
     ShutdownWindow::showShutdownWindow(window);
+
+    StartShutdown();
 
     // Request shutdown from core thread
     Q_EMIT requestedShutdown();
@@ -473,6 +490,7 @@ void BitcoinApplication::initializeResult(int retval)
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
             walletModel = new WalletModel(pwalletMain, optionsModel);
+            walletModel->setClientModel(clientModel);
 
             window->addWallet(CARIGUI::DEFAULT_WALLET, walletModel);
             window->setCurrentWallet(CARIGUI::DEFAULT_WALLET);
@@ -500,6 +518,7 @@ void BitcoinApplication::initializeResult(int retval)
         });
         QTimer::singleShot(100, paymentServer, &PaymentServer::uiReady);
 #endif
+        pollShutdownTimer->start(200);
     } else {
         quit(); // Exit main loop
     }
@@ -555,6 +574,8 @@ int main(int argc, char* argv[])
     //   Need to pass name here as CAmount is a typedef (see http://qt-project.org/doc/qt-5/qmetatype.html#qRegisterMetaType)
     //   IMPORTANT if it is no longer a typedef use the normal variant above
     qRegisterMetaType<CAmount>("CAmount");
+    qRegisterMetaType<CAmount>("interfaces::WalletBalances");
+    qRegisterMetaType<size_t>("size_t");
 
     /// 3. Application identification
     // must be set before OptionsModel is initialized or translations are loaded,
@@ -586,7 +607,7 @@ int main(int argc, char* argv[])
     /// 6. Determine availability of data directory and parse cari.conf
     /// - Do not call GetDataDir(true) before this step finishes
     if (!fs::is_directory(GetDataDir(false))) {
-        QMessageBox::critical(0, QObject::tr("PIVX Core"),
+        QMessageBox::critical(0, QObject::tr("CARI Core"),
             QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(gArgs.GetArg("-datadir", ""))));
         return 1;
     }
@@ -605,8 +626,10 @@ int main(int argc, char* argv[])
     // - Needs to be done before createOptionsModel
 
     // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-    if (!SelectParamsFromCommandLine()) {
-        QMessageBox::critical(0, QObject::tr("CARI Core"), QObject::tr("Error: Invalid combination of -regtest and -testnet."));
+    try {
+        SelectParams(ChainNameFromCommandLine());
+    } catch(const std::exception& e) {
+        QMessageBox::critical(0, QObject::tr("CARI Core"), QObject::tr("Error: %1").arg(e.what()));
         return 1;
     }
 #ifdef ENABLE_WALLET
@@ -673,7 +696,7 @@ int main(int argc, char* argv[])
     }
 
     fs::path pathBootstrap = GetDataDir() / strWalletFile;
-    if (!fs::exists(pathBootstrap) || gArgs.GetBoolArg("-welcome", false)) {
+    if (!fs::exists(pathBootstrap)) {
         // wallet doesn't exist, popup tutorial screen.
         ret = app.createTutorialScreen();
     }
@@ -690,7 +713,7 @@ int main(int argc, char* argv[])
         app.createWindow(networkStyle.data());
         app.requestInitialize();
 #if defined(Q_OS_WIN)
-        WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("CARI Core didn't yet exit safely..."), (HWND)app.getMainWinId());
+        WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("%1 didn't yet exit safely...").arg(QObject::tr(PACKAGE_NAME)), (HWND)app.getMainWinId());
 #endif
         app.exec();
         app.requestShutdown();
