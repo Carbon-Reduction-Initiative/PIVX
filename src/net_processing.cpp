@@ -1171,15 +1171,19 @@ bool static ProcessMessage(CNode* pfrom, std::string strCommand, CDataStream& vR
             pfrom->fDisconnect = true;
         }
 
-        // CARI: We use certain sporks during IBD, so check to see if they are
+ // PIVX: We use certain sporks during IBD, so check to see if they are
         // available. If not, ask the first peer connected for them.
         // TODO: Move this to an instant broadcast of the sporks.
-        bool fMissingSporks = !pSporkDB->SporkExists(SPORK_14_NEW_PROTOCOL_ENFORCEMENT) ||
-                              !pSporkDB->SporkExists(SPORK_15_NEW_PROTOCOL_ENFORCEMENT_2) ||
-                              !pSporkDB->SporkExists(SPORK_16_ZEROCOIN_MAINTENANCE_MODE) ||
+        bool fMissingSporks = !pSporkDB->SporkExists(SPORK_16_ZEROCOIN_MAINTENANCE_MODE) ||
                               !pSporkDB->SporkExists(SPORK_18_ZEROCOIN_PUBLICSPEND_V4) ||
                               !pSporkDB->SporkExists(SPORK_19_COLDSTAKING_MAINTENANCE) ||
-                              !pSporkDB->SporkExists(SPORK_20_SAPLING_MAINTENANCE);
+                              !pSporkDB->SporkExists(SPORK_20_SAPLING_MAINTENANCE)||
+							  !pSporkDB->SporkExists(SPORK_31_NEW_PROTOCOL_ENFORCEMENT_1) ||
+                              !pSporkDB->SporkExists(SPORK_32_NEW_PROTOCOL_ENFORCEMENT_2) ||
+                              !pSporkDB->SporkExists(SPORK_33_NEW_PROTOCOL_ENFORCEMENT_3) ||
+                              !pSporkDB->SporkExists(SPORK_34_NEW_PROTOCOL_ENFORCEMENT_4) ||
+                              !pSporkDB->SporkExists(SPORK_35_NEW_PROTOCOL_ENFORCEMENT_5);
+
 
         if (fMissingSporks || !fRequestedSporksIDB){
             LogPrintf("asking peer for sporks\n");
