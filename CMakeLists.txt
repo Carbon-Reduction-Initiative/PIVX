@@ -117,6 +117,14 @@ else()
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
+
+# error out if configure fails
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/config/cari-config.h")
+else()
+    execute_process(COMMAND cat config.log WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    message(FATAL_ERROR "configure script didn't finish properly see config.log output above")
+
+endif()
 add_definitions(-DHAVE_CONFIG_H)
 
 ExternalProject_Add (
@@ -193,12 +201,15 @@ set(SERVER_SOURCES
         ./src/checkpoints.cpp
         ./src/httprpc.cpp
         ./src/httpserver.cpp
+        ./src/indirectmap.h
         ./src/init.cpp
-        ./src/interface/wallet.cpp
+        ./src/interfaces/handler.cpp
+        ./src/interfaces/wallet.cpp
         ./src/dbwrapper.cpp
         ./src/legacy/validation_zerocoin_legacy.cpp
         ./src/merkleblock.cpp
         ./src/miner.cpp
+        ./src/blockassembler.cpp
         ./src/net.cpp
         ./src/net_processing.cpp
         ./src/noui.cpp
@@ -272,7 +283,6 @@ set(WALLET_SOURCES
         ./src/zcari/mintpool.cpp
         ./src/wallet/hdchain.cpp
         ./src/wallet/rpcdump.cpp
-        ./src/zcari/deterministicmint.cpp
         ./src/zcari/zerocoin.cpp
         ./src/wallet/scriptpubkeyman.cpp
         ./src/wallet/rpcwallet.cpp
@@ -378,7 +388,6 @@ set(COMMON_SOURCES
         ./src/consensus/tx_verify.cpp
         ./src/consensus/zerocoin_verify.cpp
         ./src/primitives/block.cpp
-        ./src/zcari/deterministicmint.cpp
         ./src/primitives/transaction.cpp
         ./src/zcari/zerocoin.cpp
         ./src/core_read.cpp
@@ -501,6 +510,9 @@ target_link_libraries(pivx-cli
 if($ENV{target} MATCHES "Windows")
     target_link_libraries(cari-cli ${WINDOWS_LDADD})
 endif()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(pivx-cli "-framework Cocoa")
+endif()
 
 set(cari-tx_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/cari-tx.cpp)
 if($ENV{target} MATCHES "Windows")
@@ -524,6 +536,9 @@ if($ENV{target} MATCHES "Windows")
 endif()
 if(GMP_FOUND)
     target_link_libraries(cari-tx ${GMP_LIBRARY})
+endif()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(pivx-tx "-framework Cocoa")
 endif()
 
 set(pivxd_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/pivxd.cpp)
