@@ -86,6 +86,7 @@
         <file alias="ic-check">cari/res/img/ic-check.svg</file>
         <file alias="ic-chevron-left">cari/res/img/ic-chevron-left.svg</file>
         <file alias="ic-chevron-right">cari/res/img/ic-chevron-right.svg</file>
+        <file alias="ic-chevron-right-liliac">cari/res/img/ic-chevron-right-liliac.svg</file>
         <file alias="ic-clear-liliac">cari/res/img/ic-clear-liliac.svg</file>
         <file alias="ic-clear-purple">cari/res/img/ic-clear-purple.svg</file>
         <file alias="ic-close-white">cari/res/img/ic-close-white.svg</file>
@@ -114,10 +115,10 @@
         <file alias="ic-nav-master-active">cari/res/img/ic-nav-master-active.svg</file>
         <file alias="ic-nav-master-hover">cari/res/img/ic-nav-master-hover.svg</file>
         <file alias="ic-nav-master">cari/res/img/ic-nav-master.svg</file>
-        <file alias="ic-nav-masterlist-active">cari/res/img/ic-nav-masterlist-active.svg</file>
+		<file alias="ic-nav-masterlist-active">cari/res/img/ic-nav-masterlist-active.svg</file>
         <file alias="ic-nav-masterlist-hover">cari/res/img/ic-nav-masterlist-hover.svg</file>
         <file alias="ic-nav-masterlist">cari/res/img/ic-nav-masterlist.svg</file>
-        <file alias="ic-nav-privacy-active">cari/res/img/ic-nav-privacy-active.svg</file>
+		<file alias="ic-nav-privacy-active">cari/res/img/ic-nav-privacy-active.svg</file>
         <file alias="ic-nav-privacy-hover">cari/res/img/ic-nav-privacy-hover.svg</file>
         <file alias="ic-nav-privacy">cari/res/img/ic-nav-privacy.svg</file>
         <file alias="ic-nav-receive-active">cari/res/img/ic-nav-receive-active.svg</file>
@@ -222,5 +223,7 @@
         <file alias="ic-check-cold-staking">cari/res/img/ic-check-cold-staking.svg</file>
         <file alias="ic-check-cold-staking-off">cari/res/img/ic-check-cold-staking-off.svg</file>
         <file alias="ic-check-cold-staking-enabled">cari/res/img/ic-check-cold-staking-enabled.svg</file>
+        <file alias="ic-information">cari/res/img/ic-information.svg</file>
+        <file alias="ic-information-hover">cari/res/img/ic-information-hover.svg</file>
     </qresource>
 </RCC>
