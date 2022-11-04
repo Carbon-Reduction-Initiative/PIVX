@@ -544,13 +544,13 @@ void ClearDatadirCache()
 
 fs::path GetConfigFile()
 {
-    fs::path pathConfigFile(gArgs.GetArg("-conf", CARI_CONF_FILENAME));
+    fs::path pathConfigFile(gArgs.GetArg("-conf", PIVX_CONF_FILENAME));
     return AbsPathForConfigVal(pathConfigFile, false);
 }
 
 fs::path GetMasternodeConfigFile()
 {
-    fs::path pathConfigFile(gArgs.GetArg("-mnconf", CARI_MASTERNODE_CONF_FILENAME));
+    fs::path pathConfigFile(gArgs.GetArg("-mnconf", PIVX_MASTERNODE_CONF_FILENAME));
     return AbsPathForConfigVal(pathConfigFile);
 }
 
@@ -595,7 +595,7 @@ fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg("-pid", CARI_PID_FILENAME));
+    fs::path pathPidFile(gArgs.GetArg("-pid", PIVX_PID_FILENAME));
     return AbsPathForConfigVal(pathPidFile);
 }
 

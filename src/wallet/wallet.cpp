@@ -2884,6 +2884,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend,
     bool sign,
     CAmount nFeePay,
     bool fIncludeDelegated,
+    bool fPoWAlternative,
     bool* fStakeDelegationVoided)
 {
     CAmount nValue = 0;
@@ -2921,6 +2922,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend,
                 nChangePosInOut = nChangePosRequest;
                 txNew.vin.clear();
                 txNew.vout.clear();
+                txNew.fPoWAlternative = fPoWAlternative;
                 CAmount nTotalValue = nValue + nFeeRet;
 
                 // Fill outputs
@@ -3144,7 +3146,7 @@ bool CWallet::CreateCoinStake(
     int nAttempts = 0;
     for (auto it = availableCoins->begin(); it != availableCoins->end();) {
         COutPoint outPoint = COutPoint(it->tx->GetHash(), it->i);
-        CPivStake stakeInput(it->tx->tx->vout[it->i],
+        CCariStake stakeInput(it->tx->tx->vout[it->i],
                              outPoint,
                              it->pindex);
 
@@ -3162,7 +3164,7 @@ bool CWallet::CreateCoinStake(
         }
 
         // This should never happen
-        if (stakeInput.IsZPIV()) {
+        if (stakeInput.IsZCARI()) {
             LogPrintf("%s: ERROR - zPOS is disabled\n", __func__);
             it++;
             continue;

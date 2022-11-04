@@ -8,7 +8,7 @@
 #include "txdb.h"
 #include "wallet/wallet.h"
 
-CCariStake* CCariStake::NewPivStake(const CTxIn& txin)
+CCariStake* CCariStake::NewCariStake(const CTxIn& txin)
 {
     if (txin.IsZerocoinSpend()) {
         error("%s: unable to initialize CCariStake from zerocoin spend", __func__);
