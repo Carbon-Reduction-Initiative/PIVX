@@ -164,10 +164,10 @@ public:
         consensus.nTime_RejectOldSporkKey                = 0;
 
         // height-based activations
-        consensus.height_last_invalid_UTXO = 894538;
-        consensus.height_last_ZC_AccumCheckpoint = 1686240;
-        consensus.height_last_ZC_WrappedSerials = 1686229;
-        consensus.height_ZC_RecalcAccumulators = 908000;
+        consensus.height_last_invalid_UTXO               = 999999999;
+        consensus.height_last_ZC_AccumCheckpoint         = 0;
+        consensus.height_last_ZC_WrappedSerials          = 999999999;
+        consensus.height_ZC_RecalcAccumulators           = 999999999;
 
         // validation by-pass
         consensus.nCariBadBlockTime                      = 1471401614;    // Skip nBit validation of Block 259201 per PR #915
@@ -218,6 +218,7 @@ public:
         pchMessageStart[1] = 0xc3;
         pchMessageStart[2] = 0xfb;
         pchMessageStart[3] = 0xe8;
+
         nDefaultPort       = 31813;
 
         // Note that of those with the service bits flag, most only support a subset of possible options
