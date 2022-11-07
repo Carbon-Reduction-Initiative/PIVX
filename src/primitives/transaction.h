@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2015-2020 The CARI developers
+// Copyright (c) 2015-2020 The PIVX developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -282,7 +282,6 @@ public:
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     const uint32_t nLockTime;
-    const bool fPoWAlternative;
     Optional<SaplingTxData> sapData{SaplingTxData()}; // Future: Don't initialize it by default
     Optional<std::vector<uint8_t>> extraPayload{nullopt};     // only available for special transaction types
 
@@ -421,7 +420,6 @@ struct CMutableTransaction
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
-    bool fPoWAlternative;
     Optional<SaplingTxData> sapData{SaplingTxData()}; // Future: Don't initialize it by default
     Optional<std::vector<uint8_t>> extraPayload{nullopt};
 

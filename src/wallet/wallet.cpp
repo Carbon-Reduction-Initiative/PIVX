@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2020 The CARI developers
+// Copyright (c) 2015-2020 The PIVX developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -2884,7 +2884,6 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend,
     bool sign,
     CAmount nFeePay,
     bool fIncludeDelegated,
-    bool fPoWAlternative,
     bool* fStakeDelegationVoided)
 {
     CAmount nValue = 0;
@@ -2922,7 +2921,6 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend,
                 nChangePosInOut = nChangePosRequest;
                 txNew.vin.clear();
                 txNew.vout.clear();
-                txNew.fPoWAlternative = fPoWAlternative;
                 CAmount nTotalValue = nValue + nFeeRet;
 
                 // Fill outputs
@@ -2951,7 +2949,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend,
                 if (nChange > 0) {
                     // Fill a vout to ourself
                     // TODO: pass in scriptChange instead of reservekey so
-                    // change transaction isn't always pay-to-cari-address
+                    // change transaction isn't always pay-to-pivx-address
                     bool combineChange = false;
 
                     // coin control: send change to custom address
@@ -4192,10 +4190,10 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
             UIWarning(strprintf(_("Warning: error reading %s! All keys read correctly, but transaction data"
                          " or address book entries might be missing or incorrect."), walletFile));
         } else if (nLoadWalletRet == DB_TOO_NEW) {
-            UIError(strprintf(_("Error loading %s: Wallet requires newer version of CARI Core"), walletFile));
+            UIError(strprintf(_("Error loading %s: Wallet requires newer version of PIVX Core"), walletFile));
             return nullptr;
         } else if (nLoadWalletRet == DB_NEED_REWRITE) {
-            UIError(_("Wallet needed to be rewritten: restart CARI Core to complete"));
+            UIError(_("Wallet needed to be rewritten: restart PIVX Core to complete"));
             return nullptr;
         } else {
             UIError(strprintf(_("Error loading %s\n"), walletFile));
