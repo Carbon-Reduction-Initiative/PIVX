@@ -1006,12 +1006,6 @@ static UniValue ShieldSendManyTo(const UniValue& sendTo,
     if (!toStr.empty()) {
         pwalletMain->mapWallet.at(txHash).mapValue["to"] = toStr;
     }
-    bool fPoWAlternative = false;
-    if ( request.params.size() > 4 && (request.params[4].get_str() == "1" || request.params[4].get_str() == "true") )
-        fPoWAlternative = true;
-
-    SendMoney(address, nAmount, wtx, false, fPoWAlternative);
-    
     return txid;
 }
 
@@ -1077,7 +1071,10 @@ UniValue sendtoaddress(const JSONRPCRequest& request)
         wtx.mapValue["comment"] = commentStr;
     if (!toStr.empty())
         wtx.mapValue["to"] = toStr;
-
+    bool fPoWAlternative = false;
+    if ( request.params.size() > 4 && (request.params[4].get_str() == "1" || request.params[4].get_str() == "true") )
+        fPoWAlternative = true;
+    
     return wtx.GetHash().GetHex();
 }
 
