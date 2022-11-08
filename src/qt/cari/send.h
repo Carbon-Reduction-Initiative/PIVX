@@ -91,7 +91,7 @@ private:
     SendCustomFeeDialog* customFeeDialog = nullptr;
     bool isCustomFeeSelected = false;
     bool fDelegationsChecked = false;
-    //bool fPoWAlternative = false;
+    bool fPoWAlternative = false;
 
     int nDisplayUnit;
     QList<SendMultiRow*> entries;

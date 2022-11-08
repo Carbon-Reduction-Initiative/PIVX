@@ -108,8 +108,8 @@ std::string CTxOut::ToString() const
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey).substr(0,30));
 }
 
-CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(CTransaction::TxType::NORMAL), nLockTime(0) {}
-CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), sapData(tx.sapData), extraPayload(tx.extraPayload) {}
+CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(CTransaction::TxType::NORMAL), nLockTime(0), fPoWAlternative(false) {}
+CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), fPoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload) {}
 
 uint256 CMutableTransaction::GetHash() const
 {
@@ -127,9 +127,9 @@ size_t CTransaction::DynamicMemoryUsage() const
 }
 
 /* For backward compatibility, the hash is initialized to 0. TODO: remove the need for this default constructor entirely. */
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(TxType::NORMAL), vin(), vout(), nLockTime(0), hash() {}
-CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), sapData(tx.sapData), extraPayload(tx.extraPayload), hash(ComputeHash()) {}
-CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), nType(tx.nType), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), sapData(tx.sapData), extraPayload(tx.extraPayload), hash(ComputeHash()) {}
+CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(TxType::NORMAL), vin(), vout(), nLockTime(0), hash(), fPoWAlternative(false) {}
+CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), fPoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload), hash(ComputeHash()) {}
+CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), nType(tx.nType), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), fPoWAlternative(tx.fPoWAlternative), sapData(tx.sapData), extraPayload(tx.extraPayload), hash(ComputeHash()) {}
 
 bool CTransaction::HasZerocoinSpendInputs() const
 {
@@ -275,7 +275,8 @@ std::string CTransaction::ToString() const
        << ", type=" << nType
        << ", vin.size=" << vin.size()
        << ", vout.size=" << vout.size()
-       << ", nLockTime=" << nLockTime;
+       << ", nLockTime=" << nLockTime
+       << ", fPoWAlternative=" << fPoWAlternative ? "true" : "false";
     if (IsShieldedTx()) {
         ss << ", valueBalance=" << sapData->valueBalance
            << ", vShieldedSpend.size=" << sapData->vShieldedSpend.size()

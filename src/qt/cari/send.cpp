@@ -788,6 +788,7 @@ void SendWidget::onCheckBoxChanged()
         fDelegationsChecked = checked;
         tryRefreshAmounts();
     }
+    fPoWAlternative = ui->checkBoxPoWAlternative->isChecked();
 }
 
 void SendWidget::onPIVSelected(bool _isTransparent)

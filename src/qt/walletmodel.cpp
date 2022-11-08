@@ -389,7 +389,7 @@ bool WalletModel::updateAddressBookLabels(const CWDestination& dest, const std::
     return false;
 }
 
-WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction* transaction, const CCoinControl* coinControl, bool fIncludeDelegations)
+WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction* transaction, const CCoinControl* coinControl, bool fIncludeDelegations, bool fPoWAlternative)
 {
     CAmount total = 0;
     QList<SendCoinsRecipient> recipients = transaction->getRecipients();
@@ -491,7 +491,8 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
                                                   true,
                                                   0,
                                                   fIncludeDelegations,
-                                                  &transaction->fIsStakeDelegationVoided);
+                                                  &transaction->fIsStakeDelegationVoided,
+                                                  fPoWAlternative);
         transaction->setTransactionFee(nFeeRequired);
 
         if (!fCreated) {

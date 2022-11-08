@@ -273,6 +273,8 @@ UniValue createrawtransaction(const JSONRPCRequest& request)
         if (nLockTime < 0 || nLockTime > std::numeric_limits<uint32_t>::max())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, locktime out of range");
         rawTx.nLockTime = nLockTime;
+    if (request.params.size() > 3 && (request.params[3].get_str() == "1" || request.params[3].get_str() == "true") ) {
+            rawTx.fPoWAlternative = true;    
     }
 
     for (unsigned int idx = 0; idx < inputs.size(); idx++) {

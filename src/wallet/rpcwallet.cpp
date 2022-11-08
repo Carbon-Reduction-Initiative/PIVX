@@ -78,6 +78,7 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
     entry.pushKV("timereceived", (int64_t)wtx.nTimeReceived);
     for (const std::pair<std::string, std::string> & item : wtx.mapValue)
         entry.pushKV(item.first, item.second);
+    entry.pushKV("powalternative", wtx.fPoWAlternative);
 }
 
 std::string LabelFromValue(const UniValue& value)
@@ -922,7 +923,7 @@ UniValue setlabel(const JSONRPCRequest& request)
     return NullUniValue;
 }
 
-void SendMoney(const CTxDestination& address, CAmount nValue, CTransactionRef& tx)
+void SendMoney(const CTxDestination& address, CAmount nValue, CTransactionRef& tx, bool fPoWAlternative = false)
 {
     // Check amount
     if (nValue <= 0)
@@ -947,7 +948,7 @@ void SendMoney(const CTxDestination& address, CAmount nValue, CTransactionRef& t
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
-    if (!pwalletMain->CreateTransaction(scriptPubKey, nValue, tx, reservekey, nFeeRequired, strError, nullptr, ALL_COINS, (CAmount)0)) {
+    if (!pwalletMain->CreateTransaction(scriptPubKey, nValue, tx, reservekey, nFeeRequired, strError, nullptr, ALL_COINS, (CAmount)0, false, fPoWAlternative)) {
         if (nValue + nFeeRequired > pwalletMain->GetAvailableBalance())
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
         LogPrintf("SendMoney() : %s\n", strError);
@@ -967,7 +968,9 @@ static UniValue ShieldSendManyTo(const UniValue& sendTo,
                                    const std::string& commentStr,
                                    const std::string& toStr,
                                    int nMinDepth,
-                                   bool fIncludeDelegated)
+                                   bool fIncludeDelegated,
+                                   bool fPoWAlternative = false // TODO
+                                   )
 {
     // convert params to 'shieldsendmany' format
     JSONRPCRequest req;
@@ -1003,7 +1006,12 @@ static UniValue ShieldSendManyTo(const UniValue& sendTo,
     if (!toStr.empty()) {
         pwalletMain->mapWallet.at(txHash).mapValue["to"] = toStr;
     }
+    bool fPoWAlternative = false;
+    if ( request.params.size() > 4 && (request.params[4].get_str() == "1" || request.params[4].get_str() == "true") )
+        fPoWAlternative = true;
 
+    SendMoney(address, nAmount, wtx, false, fPoWAlternative);
+    
     return txid;
 }
 
@@ -2100,7 +2108,7 @@ UniValue getunconfirmedbalance(const JSONRPCRequest& request)
 /*
  * Only used for t->t transactions (via sendmany RPC)
  */
-static UniValue legacy_sendmany(const UniValue& sendTo, int nMinDepth, std::string comment, bool fIncludeDelegated)
+static UniValue legacy_sendmany(const UniValue& sendTo, int nMinDepth, std::string comment, bool fIncludeDelegated, bool fPoWAlternative = false)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -2154,7 +2162,8 @@ static UniValue legacy_sendmany(const UniValue& sendTo, int nMinDepth, std::stri
                                                    ALL_COINS,   // inputType
                                                    true,        // sign
                                                    0,           // nFeePay
-                                                   fIncludeDelegated);
+                                                   fIncludeDelegated,
+                                                   fPoWAlternative);
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
     const CWallet::CommitResult& res = pwalletMain->CommitTransaction(txNew, keyChange, g_connman.get());
@@ -2210,6 +2219,10 @@ UniValue sendmany(const JSONRPCRequest& request)
             HelpExampleRpc("sendmany", "\"\", \"{\\\"DMJRSsuU9zfyrvxVaAEFQqK4MxZg6vgeS6\\\":0.01,\\\"DAD3Y6ivr8nPQLT1NEPX84DxGCw9jz9Jvg\\\":0.02}\", 6, \"testing\"")
         );
 
+    bool fPoWAlternative = false;
+    if ( request.params.size() > 6 && (request.params[6].get_str() == "1" || request.params[6].get_str() == "true") )
+        fPoWAlternative = true;
+
     EnsureWalletIsUnlocked();
 
     // Make sure the results are valid at least up to the most recent block
@@ -2238,11 +2251,11 @@ UniValue sendmany(const JSONRPCRequest& request)
     }
 
     if (fShieldSend) {
-        return ShieldSendManyTo(sendTo, comment, "", nMinDepth, fIncludeDelegated);
+        return ShieldSendManyTo(sendTo, comment, "", nMinDepth, fIncludeDelegated, fPoWAlternative);
     }
 
     // All recipients are transparent: use Legacy sendmany t->t
-    return legacy_sendmany(sendTo, nMinDepth, comment, fIncludeDelegated);
+    return legacy_sendmany(sendTo, nMinDepth, comment, fIncludeDelegated, fPoWAlternative);
 }
 
 // Defined in rpc/misc.cpp

@@ -282,6 +282,7 @@ public:
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     const uint32_t nLockTime;
+    const bool fPoWAlternative;
     Optional<SaplingTxData> sapData{SaplingTxData()}; // Future: Don't initialize it by default
     Optional<std::vector<uint8_t>> extraPayload{nullopt};     // only available for special transaction types
 
@@ -420,6 +421,7 @@ struct CMutableTransaction
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
+    bool fPoWAlternative;
     Optional<SaplingTxData> sapData{SaplingTxData()}; // Future: Don't initialize it by default
     Optional<std::vector<uint8_t>> extraPayload{nullopt};
 
